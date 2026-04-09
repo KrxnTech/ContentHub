@@ -7,7 +7,7 @@ ContentHub is an automated video processing platform that uses Artificial Intell
 The platform follows a microservices-inspired architecture to separate high-intensity media processing from standard web operations:
 
 1.  **Frontend (React/Vite)** : A responsive user interface for uploading videos, managing library content, and reviewing generated clips.
-2.  **Backend (Node.js/Express)** : A coordination layer handling authentication, database management (MongoDB), and Cloudinary storage orchestration.
+2.  **Backend (Node/Express)** : A coordination layer handling authentication, database management (MongoDB), and Cloudinary storage orchestration.
 3.  **AI Engine (Python/FastAPI)** : A dedicated high-performance service for audio extraction, transcription (Whisper), AI analysis (Llama 3), and video manipulation (FFmpeg).
 
 ## Some Project SnapShots ✨
