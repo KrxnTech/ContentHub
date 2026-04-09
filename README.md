@@ -2,13 +2,13 @@
 
 ContentHub is an automated video processing platform that uses Artificial Intelligence to identify, transcribe, and extract viral short-form clips from full-length videos. By leveraging modern LLMs and Speech-to-Text technologies, the platform automates the tedious work of manual video editing, allowing content creators to repurpose their content for social media efficiently.
 
-## Architecture Overview
+## Architecture Overview ✨
 
 The platform follows a microservices-inspired architecture to separate high-intensity media processing from standard web operations:
 
-1.  **Frontend (React/Vite)**: A responsive user interface for uploading videos, managing library content, and reviewing generated clips.
-2.  **Backend (Node.js/Express)**: A coordination layer handling authentication, database management (MongoDB), and Cloudinary storage orchestration.
-3.  **AI Engine (Python/FastAPI)**: A dedicated high-performance service for audio extraction, transcription (Whisper), AI analysis (Llama 3), and video manipulation (FFmpeg).
+1.  **Frontend (React/Vite)** : A responsive user interface for uploading videos, managing library content, and reviewing generated clips.
+2.  **Backend (Node.js/Express)** : A coordination layer handling authentication, database management (MongoDB), and Cloudinary storage orchestration.
+3.  **AI Engine (Python/FastAPI)** : A dedicated high-performance service for audio extraction, transcription (Whisper), AI analysis (Llama 3), and video manipulation (FFmpeg).
 
 ## Some Project SnapShots ✨
 
@@ -19,12 +19,12 @@ The platform follows a microservices-inspired architecture to separate high-inte
 
 ## Technology Stack
 
-*   **Frontend**: React.js, Vite, Tailwind CSS (for premium UI).
-*   **Backend**: Node.js, Express.js, Mongoose.
-*   **Database**: MongoDB (Local or Atlas).
-*   **Storage**: Cloudinary (Video and Image management).
-*   **AI Service**: Python 3.13, FastAPI, OpenAI Whisper, Groq SDK.
-*   **Media Engine**: FFmpeg, MoviePy.
+*   **Frontend** : React.js, Vite, Tailwind CSS (for premium UI).
+*   **Backend** : Node.js, Express.js, Mongoose.
+*   **Database** : MongoDB (Local or Atlas).
+*   **Storage** : Cloudinary (Video and Image management).
+*   **AI Service** : Python 3.13, FastAPI, OpenAI Whisper, Groq SDK.
+*   **Media Engine** : FFmpeg, MoviePy.
 
 ## Folder Structure
 
@@ -73,14 +73,14 @@ The platform follows a microservices-inspired architecture to separate high-inte
 
 ## System Workflow
 
-1.  **Ingestion**: User uploads a video through the React frontend to Cloudinary.
-2.  **Registration**: Metadata and the Cloudinary URL are saved to MongoDB via the Node.js backend.
-3.  **Orchestration**: The backend triggers the Python service endpoint with the video metadata.
-4.  **Audio Extraction**: The Python service extracts audio from the video using FFmpeg.
-5.  **Transcription**: OpenAI Whisper processes the audio to generate a highly accurate text transcript.
-6.  **AI Content Analysis**: The transcript is sent to Groq AI (Llama 3) with a specialized prompt to identify "viral" moments based on engagement potential.
-7.  **Video Processing**: The service cuts the original video into multiple segments using the AI-identified timestamps.
-8.  **Cloudinary Sync**: Generated clips are uploaded back to Cloudinary, and final metadata is returned to the Node.js backend to update the database.
+1.  **Ingestion** : User uploads a video through the React frontend to Cloudinary.
+2.  **Registration** : Metadata and the Cloudinary URL are saved to MongoDB via the Node.js backend.
+3.  **Orchestration** : The backend triggers the Python service endpoint with the video metadata.
+4.  **Audio Extraction** : The Python service extracts audio from the video using FFmpeg.
+5.  **Transcription** : OpenAI Whisper processes the audio to generate a highly accurate text transcript.
+6.  **AI Content Analysis** : The transcript is sent to Groq AI (Llama 3) with a specialized prompt to identify "viral" moments based on engagement potential.
+7.  **Video Processing** : The service cuts the original video into multiple segments using the AI-identified timestamps.
+8.  **Cloudinary Sync** : Generated clips are uploaded back to Cloudinary, and final metadata is returned to the Node.js backend to update the database.
 
 ## Installation and Setup
 
