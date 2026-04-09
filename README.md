@@ -1,6 +1,6 @@
-# ClipAI: Production-Grade AI Video Clipping Platform
+# ContentHub : Production-Grade AI Video Clipping Platform
 
-ClipAI is an automated video processing platform that uses Artificial Intelligence to identify, transcribe, and extract viral short-form clips from full-length videos. By leveraging modern LLMs and Speech-to-Text technologies, the platform automates the tedious work of manual video editing, allowing content creators to repurpose their content for social media efficiently.
+ContentHub is an automated video processing platform that uses Artificial Intelligence to identify, transcribe, and extract viral short-form clips from full-length videos. By leveraging modern LLMs and Speech-to-Text technologies, the platform automates the tedious work of manual video editing, allowing content creators to repurpose their content for social media efficiently.
 
 ## Architecture Overview
 
