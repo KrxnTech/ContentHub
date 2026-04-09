@@ -10,6 +10,13 @@ The platform follows a microservices-inspired architecture to separate high-inte
 2.  **Backend (Node.js/Express)**: A coordination layer handling authentication, database management (MongoDB), and Cloudinary storage orchestration.
 3.  **AI Engine (Python/FastAPI)**: A dedicated high-performance service for audio extraction, transcription (Whisper), AI analysis (Llama 3), and video manipulation (FFmpeg).
 
+## Some Project SnapShots ✨
+
+<img width="1247" height="579" alt="image" src="https://github.com/user-attachments/assets/bcf87a19-150a-46fa-9053-73eb9bdbca50" />
+<img width="918" height="729" alt="image" src="https://github.com/user-attachments/assets/8214fecb-5c6b-4248-99d7-26a7aca3b80d" />
+<img width="981" height="589" alt="image" src="https://github.com/user-attachments/assets/3adb8cff-baa2-433a-a1ad-b7c38ad8a69c" />
+<img width="1411" height="835" alt="image" src="https://github.com/user-attachments/assets/06f492e1-c57d-4df8-88e4-f2e4fd3d7b85" />
+
 ## Technology Stack
 
 *   **Frontend**: React.js, Vite, Tailwind CSS (for premium UI).
