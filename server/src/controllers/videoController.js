@@ -57,37 +57,40 @@ const processVideo = asyncHandler(async (req, res) => {
     })
     .then(async (result) => {
       console.log("\n" + "=".repeat(60));
-      console.log("CRITICAL DEBUG: DATA FROM PYTHON SERVICE");
-      console.log(JSON.stringify(result, null, 2).substring(0, 1000) + "... (truncated)");
+      console.log("CRITICAL DEBUG: AI RESPONSE RECEIVED");
+      console.log(JSON.stringify({ 
+        hasClips: !!result.clips, 
+        clipsCount: result.clips?.length,
+        hasTranscript: !!result.transcript
+      }, null, 2));
       console.log("=".repeat(60) + "\n");
 
       const { clips, transcript, ai_segments } = result;
 
       if (!clips || clips.length === 0) {
-        console.error("DEBUG ERROR: Clips array is empty or missing!");
+        throw new Error("No clips received from AI service. The analysis failed to produce highlights.");
       }
 
       const savedClips = await Clip.insertMany(
         clips.map((clip, index) => {
-          console.log(`DEBUG: Mapping Clip ${index + 1} - Reason: ${clip.reason?.substring(0, 30)}...`);
           return {
             videoId: video._id,
-            title: clip.title,
+            title: clip.title || `Clip ${index + 1}`,
             description: clip.description || '',
             clipUrl: clip.clipUrl,
             cloudinaryPublicId: clip.cloudinaryPublicId,
             thumbnailUrl: clip.thumbnailUrl || '',
-            startTime: clip.start_time,
-            endTime: clip.end_time,
-            duration: clip.duration,
-            engagementScore: clip.viral_score,
-            viralScore: clip.viral_score,
-            emotion: clip.emotion,
-            category: clip.category,
+            startTime: clip.start || clip.start_time || 0,
+            endTime: clip.end || clip.end_time || 0,
+            duration: clip.duration || 0,
+            engagementScore: clip.viral_score || 0,
+            viralScore: clip.viral_score || 0,
+            emotion: clip.emotion || 'neutral',
+            category: clip.category || 'entertainment',
             keywords: clip.keywords || [],
-            aiReason: clip.reason, // NO FALLBACK
-            whyThisPart: clip.why_this_part, // NO FALLBACK
-            confidence: clip.confidence,
+            aiReason: clip.reason || '',
+            whyThisPart: clip.why_this_part || '',
+            confidence: clip.confidence || 0,
             analysis: clip.analysis || {},
             order: index,
           };
@@ -98,17 +101,24 @@ const processVideo = asyncHandler(async (req, res) => {
       video.transcript = transcript;
       video.aiSegments = ai_segments;
       video.status = 'completed';
+      video.processingError = null;
       await video.save();
-      console.log(`✅ DB Update Success: Video ${video._id} stored with ${savedClips.length} clips.`);
+      console.log(`✅ DB SUCCESS: Saved ${savedClips.length} clips for Video ${video._id}`);
     })
-
-
     .catch(async (error) => {
-      video.status = 'failed';
-      video.processingError = error.message;
-      await video.save();
-      console.error(`❌ Video ${video._id} processing failed:`, error.message);
+      // Re-fetch video to check current state
+      const currentVideo = await Video.findById(video._id);
+      if (currentVideo.clips.length > 0) {
+        console.log("⚠️ WARNING: AI process error but clips exist. Marking as completed instead of failed.");
+        currentVideo.status = 'completed';
+      } else {
+        currentVideo.status = 'failed';
+        currentVideo.processingError = error.message;
+      }
+      await currentVideo.save();
+      console.error(`❌ BACKEND ERROR:`, error.message);
     });
+
 
   res.json({
     success: true,
@@ -124,6 +134,7 @@ const getVideoStatus = asyncHandler(async (req, res) => {
     return res.status(404).json({ success: false, message: 'Video not found' });
   }
 
+  console.log(`📡 RETURNING STATUS: ${video.status} for ${video._id}. Clips: ${video.clips.length}`);
   res.json({
     success: true,
     data: {
@@ -133,6 +144,7 @@ const getVideoStatus = asyncHandler(async (req, res) => {
     },
   });
 });
+
 
 const getAllVideos = asyncHandler(async (req, res) => {
   const page = parseInt(req.query.page) || 1;
@@ -161,8 +173,10 @@ const getVideoById = asyncHandler(async (req, res) => {
     return res.status(404).json({ success: false, message: 'Video not found' });
   }
 
+  console.log(`📡 RETURNING FULL DATA for ${video._id}. Status: ${video.status}, Clips: ${video.clips?.length}`);
   res.json({ success: true, data: video });
 });
+
 
 const deleteVideo = asyncHandler(async (req, res) => {
   const video = await Video.findById(req.params.id).populate('clips');

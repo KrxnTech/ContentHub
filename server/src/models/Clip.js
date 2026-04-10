@@ -51,14 +51,15 @@ const clipSchema = new mongoose.Schema(
     },
     emotion: {
       type: String,
-      enum: ['funny', 'emotional', 'motivational', 'educational', 'neutral'],
+      enum: ['funny', 'emotional', 'motivational', 'educational', 'neutral', 'angry', 'joyful', 'sad', 'surprised'],
       default: 'neutral',
     },
     category: {
       type: String,
-      enum: ['technical', 'storytelling', 'advice', 'entertainment'],
+      enum: ['technical', 'storytelling', 'advice', 'entertainment', 'introduction', 'social', 'educational'],
       default: 'entertainment',
     },
+
     keywords: [String],
     aiReason: {
       type: String, // Why AI selected this segment
