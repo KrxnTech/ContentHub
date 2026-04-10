@@ -25,18 +25,18 @@ def extract_audio(video_path: str, temp_dir: str) -> str:
         print(f"❌ Audio extraction failed: {e}")
         return None
 
-def transcribe_audio(audio_path: str) -> str:
+def transcribe_audio(audio_path: str) -> dict:
     """Transcribe audio file using OpenAI Whisper"""
     if not audio_path or not os.path.exists(audio_path):
-        return "No audio content found."
+        return {"text": "No audio content found.", "segments": []}
 
     print(f"🗣️ Transcribing audio: {audio_path}...")
     
     try:
-        # result = model.transcribe(audio_path)
         # Using verbose=False to keep logs clean
         result = model.transcribe(audio_path, fp16=torch.cuda.is_available())
-        return result["text"]
+        return result
     except Exception as e:
         print(f"❌ Transcription failed: {e}")
-        return "Transcription unavailable due to error."
+        return {"text": "Transcription unavailable due to error.", "segments": []}
+

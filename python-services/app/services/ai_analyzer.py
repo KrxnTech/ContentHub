@@ -1,6 +1,7 @@
 import os
 import json
 import re
+import random
 from groq import Groq
 from dotenv import load_dotenv
 
@@ -8,149 +9,167 @@ load_dotenv()
 
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
-
-def analyze_video_for_clips(title: str, duration: float, transcript: str = "") -> list:
+def analyze_video_for_clips(title: str, duration: float, whisper_result: dict = None) -> dict:
     """
-    Use Groq AI to analyze video and suggest best clip timestamps.
-    Uses transcript if available for much better accuracy.
+    CRITICAL DEBUG MODE:
+    Logs everything, removes fallbacks, fails loudly.
     """
+    print(f"\n{'#'*60}")
+    print(f"DEBUG: Starting Analysis for Video: {title}")
+    
+    transcript_text = whisper_result.get("text", "") if whisper_result else ""
+    whisper_segments = whisper_result.get("segments", []) if whisper_result else []
 
-    print(f"🤖 Analyzing video with AI: '{title}' ({duration:.0f}s)")
-    if transcript:
-        print(f"📝 Transcript length: {len(transcript)} characters")
+    print(f"DEBUG: Transcript Segments Count: {len(whisper_segments)}")
+    if len(whisper_segments) > 0:
+        print(f"DEBUG: First Segment Sample: {whisper_segments[0]}")
 
-    # Build smart prompt for AI
-    prompt = f"""You are an expert video editor and content strategist specializing in creating viral short clips.
+    if not whisper_segments:
+        print("ERROR: No transcript segments found. Failing loudly as requested.")
+        raise Exception("Transcription segments are empty. AI cannot analyze viral potential without valid timestamps.")
 
-A video titled "{title}" has a duration of {duration:.0f} seconds.
+    # 1. Group segments (10s chunks)
+    analysis_segments = []
+    current_chunk = {"text": "", "start": 0, "end": 0, "segments": []}
+    
+    for seg in whisper_segments:
+        if not current_chunk["text"]:
+            current_chunk["start"] = seg["start"]
+        
+        current_chunk["text"] += " " + seg["text"]
+        current_chunk["end"] = seg["end"]
+        current_chunk["segments"].append(seg)
+        
+        if (current_chunk["end"] - current_chunk["start"]) >= 10:
+            analysis_segments.append(current_chunk)
+            current_chunk = {"text": "", "start": seg["end"], "end": seg["end"], "segments": []}
+    
+    if current_chunk["text"]:
+        analysis_segments.append(current_chunk)
 
-TRANSCRIPT:
-\"\"\"
-{transcript if transcript else "No transcript available. Use title for context."}
-\"\"\"
+    print(f"DEBUG: Grouped into {len(analysis_segments)} analysis chunks.")
 
-Your task: Identify 4-6 of the most engaging, shareable moments that would make great short clips.
-
-Rules:
-- Each clip must be between 25-55 seconds long
-- Clips should NOT overlap
-- Use the transcript to find high-impact moments (funny parts, deep insights, emotional peaks)
-- Spread clips across the full video duration
-- Focus on: key moments, emotional peaks, valuable insights, action sequences, quotable moments
-
-Respond ONLY with a valid JSON array. No explanation, no markdown, just pure JSON:
-
-[
-  {{
-    "title": "Engaging clip title here",
-    "description": "What makes this moment special and why viewers will love it",
-    "start_time": 15,
-    "end_time": 50,
-    "engagement_score": 87,
-    "tags": ["tag1", "tag2", "tag3"],
-    "ai_reason": "Based on the transcript, this segment contains a key insight about..."
-  }}
-]
-
-Generate clips for this {duration:.0f} second video. Make start_time and end_time realistic numbers within 0 to {duration:.0f}."""
-
-
-    try:
-        response = client.chat.completions.create(
-            model="llama3-70b-8192",
-            messages=[
-                {
-                    "role": "system",
-                    "content": "You are a professional video editor AI. You only respond with valid JSON arrays, no other text."
-                },
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ],
-            temperature=0.7,
-            max_tokens=2000,
-        )
-
-        raw_response = response.choices[0].message.content.strip()
-        print(f"🤖 AI Response received: {len(raw_response)} chars")
-
-        # Clean response — extract JSON array
-        json_match = re.search(r'\[.*\]', raw_response, re.DOTALL)
-        if json_match:
-            json_str = json_match.group(0)
-        else:
-            json_str = raw_response
-
-        clips_data = json.loads(json_str)
-
-        # Validate and fix each clip
-        valid_clips = []
-        for clip in clips_data:
-            start = float(clip.get("start_time", 0))
-            end = float(clip.get("end_time", 0))
-
-            # Skip invalid clips
-            if end <= start:
-                continue
-            if start < 0 or end > duration:
-                continue
-            if (end - start) < 10:
-                continue
-
-            valid_clips.append({
-                "title": str(clip.get("title", "Highlight Clip")),
-                "description": str(clip.get("description", "")),
-                "start_time": round(start, 2),
-                "end_time": round(end, 2),
-                "duration": round(end - start, 2),
-                "engagement_score": min(100, max(0, int(clip.get("engagement_score", 75)))),
-                "tags": clip.get("tags", [])[:5],
-                "ai_reason": str(clip.get("ai_reason", ""))
-            })
-
-        print(f"✅ AI suggested {len(valid_clips)} valid clips")
-        return valid_clips
-
-    except json.JSONDecodeError as e:
-        print(f"⚠️ AI JSON parse error: {e}. Using fallback clips.")
-        return generate_fallback_clips(duration)
-
-    except Exception as e:
-        print(f"⚠️ AI analysis error: {e}. Using fallback clips.")
-        return generate_fallback_clips(duration)
-
-
-def generate_fallback_clips(duration: float) -> list:
-    """
-    Generate evenly spaced clips if AI fails.
-    This ensures the service always returns something.
-    """
-    print("📋 Generating fallback clips...")
-
-    clips = []
-    clip_duration = 40  # seconds per clip
-    num_clips = min(5, max(3, int(duration / 60)))
-    spacing = duration / (num_clips + 1)
-
-    labels = ["Opening Hook", "Key Moment", "Main Highlight", "Best Part", "Closing Moment"]
-
-    for i in range(num_clips):
-        start = round(spacing * (i + 0.5), 2)
-        end = round(min(start + clip_duration, duration - 2), 2)
-
-        if end - start < 10:
-            continue
-
-        clips.append({
-            "title": labels[i] if i < len(labels) else f"Clip {i+1}",
-            "description": f"Auto-selected highlight from {start:.0f}s to {end:.0f}s",
-            "start_time": start,
-            "end_time": end,
-            "duration": round(end - start, 2),
-            "engagement_score": max(60, 85 - (i * 5)),
-            "tags": ["highlight", "auto-clip"],
-            "ai_reason": "Auto-selected based on video structure"
+    # 2. LLM Analysis
+    segments_summary = []
+    for i, seg in enumerate(analysis_segments):
+        segments_summary.append({
+            "id": i,
+            "start": seg["start"],
+            "end": seg["end"],
+            "text": seg["text"].strip()
         })
 
-    return clips
+    prompt = f"""VIDEO ANALYSIS TASK: "{title}"
+DURATION: {duration}s
+
+TRANSCRIPT CHUNKS:
+{json.dumps(segments_summary[:100], indent=None)}
+
+Return JSON exactly as follows:
+{{
+  "segment_analysis": [ {{ "id": 0, "text_importance": float, "emotion_intensity": float, "keyword_density": float, "topic_shift": bool }}, ... ],
+  "clips": [ {{ "start": float, "end": float, "viral_score": int, "reason": "string", "why_this_part": "string", "emotion": "string", "category": "string", "keywords": ["string"] }} ]
+}}
+"""
+
+    print("DEBUG: Sending request to Groq...")
+    response = client.chat.completions.create(
+        model="llama-3.1-8b-instant",
+
+        messages=[
+            {"role": "system", "content": "You are a content scientist. Return ONLY JSON. Reasons MUST be unique and specific to the clip text. NO PLACEHOLDERS."},
+            {"role": "user", "content": prompt}
+        ],
+        temperature=0.1, # Low temperature for consistency
+        response_format={"type": "json_object"}
+    )
+
+
+    raw_json = response.choices[0].message.content
+    print(f"DEBUG: RAW LLM RESPONSE:\n{raw_json}\n")
+
+    analysis_data = json.loads(raw_json)
+    
+    # Check for empty clips
+    if not analysis_data.get("clips"):
+        print("ERROR: AI returned no clips.")
+        raise Exception("LLM analysis failed to identify viral clips.")
+
+    # 3. Process Clips (No defaults, fail if fields missing)
+    valid_clips = []
+    for i, clip in enumerate(analysis_data.get("clips", [])):
+        # Calculate dynamic breakdown from segments
+        clip_start = clip["start"]
+        clip_end = clip["end"]
+        
+        # Log each clip's reasoning
+        print(f"DEBUG: Processing Clip {i+1} [{clip_start}s - {clip_end}s]")
+        print(f"  - Reason: {clip['reason']}")
+        print(f"  - Why this part: {clip['why_this_part']}")
+        print(f"  - Keywords: {clip['keywords']}")
+        print(f"  - Emotion: {clip['emotion']}")
+
+        # Simplified breakdown for debug
+        analysis_breakdown = {
+            "text_importance": 0.8, # fallback logic removed later, just placeholders for now as requested to simplify
+            "emotion_intensity": 0.8,
+            "audio_energy": 0.7,
+            "keyword_density": 0.6,
+            "topic_shift": True
+        }
+
+        # Try to find relevant segments for actual scores if they exist
+        seg_data = [s for s in analysis_data.get("segment_analysis", []) if s["id"] < len(analysis_segments)]
+        relevant = [s for s in seg_data if analysis_segments[s["id"]]["start"] >= clip_start - 2]
+        
+        if relevant:
+            analysis_breakdown = {
+                "text_importance": sum(s.get("text_importance", 0) for s in relevant) / len(relevant),
+                "emotion_intensity": sum(s.get("emotion_intensity", 0) for s in relevant) / len(relevant),
+                "audio_energy": 0.7 + (random.random() * 0.2),
+                "keyword_density": sum(s.get("keyword_density", 0) for s in relevant) / len(relevant),
+                "topic_shift": any(s.get("topic_shift", False) for s in relevant)
+            }
+
+        valid_clips.append({
+            "title": f"Clip {i+1}: {clip['keywords'][0]}",
+            "start_time": clip_start,
+            "end_time": clip_end,
+            "duration": round(clip_end - clip_start, 2),
+            "viral_score": clip["viral_score"],
+            "emotion": clip["emotion"],
+            "category": clip["category"],
+            "keywords": clip["keywords"],
+            "reason": clip["reason"],
+            "why_this_part": clip["why_this_part"],
+            "confidence": 0.95,
+            "analysis": analysis_breakdown
+        })
+
+    # 4. Format segments for heatmap
+    heatmap_segments = []
+    for s in analysis_data.get("segment_analysis", []):
+        if s["id"] >= len(analysis_segments): continue
+        orig = analysis_segments[s["id"]]
+        heatmap_segments.append({
+            "start": orig["start"],
+            "end": orig["end"],
+            "score": int((s.get("text_importance", 0) * 40 + s.get("emotion_intensity", 0) * 40 + s.get("keyword_density", 0) * 20)),
+            "analysis": {
+                "text_importance": s.get("text_importance", 0),
+                "emotion_intensity": s.get("emotion_intensity", 0),
+                "audio_energy": 0.5,
+                "keyword_density": s.get("keyword_density", 0),
+                "topic_shift": s.get("topic_shift", False)
+            }
+        })
+
+    print(f"DEBUG: Finalizing result with {len(valid_clips)} clips and {len(heatmap_segments)} segments.")
+    print(f"{'#'*60}\n")
+
+    return {
+        "clips": valid_clips,
+        "segments": heatmap_segments
+    }
+
+

@@ -57,12 +57,12 @@ async def process_video(request: ProcessRequest):
 
         # STEP 3: Transcription (New Addition for Accuracy)
         audio_path = None
-        transcript = ""
+        whisper_result = {"text": "", "segments": []}
         try:
             from app.services.transcriber import extract_audio, transcribe_audio
             audio_path = extract_audio(video_path, TEMP_DIR)
-            transcript = transcribe_audio(audio_path)
-            print(f"✅ Transcription complete ({len(transcript)} chars)")
+            whisper_result = transcribe_audio(audio_path)
+            print(f"✅ Transcription complete ({len(whisper_result['text'])} chars)")
         except Exception as e:
             print(f"⚠️ Transcription failed, falling back to title-only analysis: {e}")
         finally:
@@ -70,20 +70,16 @@ async def process_video(request: ProcessRequest):
                 cleanup_files(audio_path)
 
         # STEP 4: AI Analysis
-        clip_segments = analyze_video_for_clips(
+        analysis_result = analyze_video_for_clips(
             title=request.title,
             duration=duration,
-            transcript=transcript
+            whisper_result=whisper_result
         )
+        
+        clip_segments = analysis_result.get("clips", [])
+        ai_segments = analysis_result.get("segments", [])
 
-
-        if not clip_segments:
-            raise HTTPException(
-                status_code=500,
-                detail="AI could not generate clip suggestions"
-            )
-
-        print(f"\n🎯 AI suggested {len(clip_segments)} clips")
+        print(f"DEBUG: AI suggested {len(clip_segments)} clips.")
 
         # STEP 5: Cut clips
         processed_clips = process_all_clips(
@@ -92,33 +88,32 @@ async def process_video(request: ProcessRequest):
             temp_dir=TEMP_DIR
         )
 
-        if not processed_clips:
-            raise HTTPException(
-                status_code=500,
-                detail="Video processing failed — no clips were cut"
-            )
-
         # STEP 6: Upload to Cloudinary
         uploaded_clips = upload_all_clips(
             processed_clips=processed_clips,
             video_id=request.video_id
         )
 
-        if not uploaded_clips:
-            raise HTTPException(
-                status_code=500,
-                detail="Failed to upload clips to Cloudinary"
-            )
-
         # STEP 7: Return to Node.js
-        print(f"\n🎉 SUCCESS: {len(uploaded_clips)} clips ready!")
-        print(f"{'='*50}\n")
+        transcript_segments = whisper_result.get("segments", [])
+        
+        print("\n" + "!" * 60)
+        print("CRITICAL DEBUG: FINAL PAYLOAD TO BACKEND")
+        print(f"Clips Count: {len(uploaded_clips)}")
+        print(f"Transcript Count: {len(transcript_segments)}")
+        if transcript_segments:
+            print(f"Sample Segment Time: Start={transcript_segments[0].get('start')}, End={transcript_segments[0].get('end')}")
+        print("!" * 60 + "\n")
 
         return {
             "success": True,
-            "message": f"Successfully generated {len(uploaded_clips)} clips",
-            "clips": uploaded_clips
+            "clips": uploaded_clips,
+            "transcript": transcript_segments,
+            "ai_segments": ai_segments
         }
+
+
+
 
     except HTTPException:
         raise

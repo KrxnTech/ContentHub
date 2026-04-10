@@ -3,9 +3,9 @@ import { Upload, Zap, Scissors, Film } from 'lucide-react';
 
 const features = [
   { icon: Upload, title: 'Upload Video', desc: 'Drag & drop your video file up to 500MB' },
-  { icon: Zap,    title: 'AI Analysis', desc: 'Our AI analyzes content and finds key moments' },
+  { icon: Zap, title: 'AI Analysis', desc: 'Our AI analyzes content and finds key moments' },
   { icon: Scissors, title: 'Auto Clip', desc: 'Automatically generates engaging short clips' },
-  { icon: Film,   title: 'Download', desc: 'Preview and download your clips instantly' },
+  { icon: Film, title: 'Download', desc: 'Preview and download your clips instantly' },
 ];
 
 export default function HomePage() {

@@ -53,6 +53,28 @@ const videoSchema = new mongoose.Schema(
       fps: Number,
       bitrate: Number,
     },
+    transcript: [
+      {
+        text: String,
+        start: Number,
+        end: Number,
+      },
+    ],
+    aiSegments: [
+      {
+        start: Number,
+        end: Number,
+        score: Number,
+        analysis: {
+          text_importance: Number,
+          emotion_intensity: Number,
+          audio_energy: Number,
+          topic_shift: Boolean,
+          keyword_density: Number,
+        },
+      },
+    ],
+
   },
   {
     timestamps: true,

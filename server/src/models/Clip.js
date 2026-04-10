@@ -45,20 +45,45 @@ const clipSchema = new mongoose.Schema(
       type: Number, // 0-100 AI score
       default: 0,
     },
-    tags: [
-      {
-        type: String,
-        trim: true,
-      },
-    ],
+    viralScore: {
+      type: Number,
+      default: 0,
+    },
+    emotion: {
+      type: String,
+      enum: ['funny', 'emotional', 'motivational', 'educational', 'neutral'],
+      default: 'neutral',
+    },
+    category: {
+      type: String,
+      enum: ['technical', 'storytelling', 'advice', 'entertainment'],
+      default: 'entertainment',
+    },
+    keywords: [String],
     aiReason: {
       type: String, // Why AI selected this segment
       default: '',
+    },
+    whyThisPart: {
+      type: String,
+      default: '',
+    },
+    confidence: {
+      type: Number,
+      default: 0,
+    },
+    analysis: {
+      text_importance: Number,
+      emotion_intensity: Number,
+      audio_energy: Number,
+      topic_shift: Boolean,
+      keyword_density: Number,
     },
     order: {
       type: Number, // clip order / ranking
       default: 0,
     },
+
   },
   {
     timestamps: true,

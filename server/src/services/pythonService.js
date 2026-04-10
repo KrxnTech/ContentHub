@@ -17,7 +17,7 @@ const pythonService = {
         throw new Error(response.data.message || 'Python service returned an error');
       }
 
-      return response.data.clips;
+      return response.data;
     } catch (error) {
       if (error.code === 'ECONNREFUSED') {
         throw new Error('Python processing service is not running. Please start it.');

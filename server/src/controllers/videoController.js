@@ -55,30 +55,54 @@ const processVideo = asyncHandler(async (req, res) => {
       videoUrl: video.originalUrl,
       title: video.title,
     })
-    .then(async (clips) => {
+    .then(async (result) => {
+      console.log("\n" + "=".repeat(60));
+      console.log("CRITICAL DEBUG: DATA FROM PYTHON SERVICE");
+      console.log(JSON.stringify(result, null, 2).substring(0, 1000) + "... (truncated)");
+      console.log("=".repeat(60) + "\n");
+
+      const { clips, transcript, ai_segments } = result;
+
+      if (!clips || clips.length === 0) {
+        console.error("DEBUG ERROR: Clips array is empty or missing!");
+      }
+
       const savedClips = await Clip.insertMany(
-        clips.map((clip, index) => ({
-          videoId: video._id,
-          title: clip.title,
-          description: clip.description,
-          clipUrl: clip.clipUrl,
-          cloudinaryPublicId: clip.cloudinaryPublicId,
-          thumbnailUrl: clip.thumbnailUrl || '',
-          startTime: clip.startTime,
-          endTime: clip.endTime,
-          duration: clip.duration,
-          engagementScore: clip.engagementScore,
-          tags: clip.tags || [],
-          aiReason: clip.aiReason || '',
-          order: index,
-        }))
+        clips.map((clip, index) => {
+          console.log(`DEBUG: Mapping Clip ${index + 1} - Reason: ${clip.reason?.substring(0, 30)}...`);
+          return {
+            videoId: video._id,
+            title: clip.title,
+            description: clip.description || '',
+            clipUrl: clip.clipUrl,
+            cloudinaryPublicId: clip.cloudinaryPublicId,
+            thumbnailUrl: clip.thumbnailUrl || '',
+            startTime: clip.start_time,
+            endTime: clip.end_time,
+            duration: clip.duration,
+            engagementScore: clip.viral_score,
+            viralScore: clip.viral_score,
+            emotion: clip.emotion,
+            category: clip.category,
+            keywords: clip.keywords || [],
+            aiReason: clip.reason, // NO FALLBACK
+            whyThisPart: clip.why_this_part, // NO FALLBACK
+            confidence: clip.confidence,
+            analysis: clip.analysis || {},
+            order: index,
+          };
+        })
       );
 
       video.clips = savedClips.map((c) => c._id);
+      video.transcript = transcript;
+      video.aiSegments = ai_segments;
       video.status = 'completed';
       await video.save();
-      console.log(`✅ Video ${video._id} processed: ${savedClips.length} clips generated`);
+      console.log(`✅ DB Update Success: Video ${video._id} stored with ${savedClips.length} clips.`);
     })
+
+
     .catch(async (error) => {
       video.status = 'failed';
       video.processingError = error.message;

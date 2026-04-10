@@ -1,91 +1,134 @@
-import { Play, Clock, Zap, Tag } from 'lucide-react';
+import { Play, Clock, Zap, Tag, Brain, Sparkles, TrendingUp, Info } from 'lucide-react';
 import clsx from 'clsx';
 
-export default function ClipCard({ clip, index }) {
+export default function ClipCard({ clip, index, isActive, onSelect }) {
   const formatTime = (seconds) => {
-    const m = Math.floor(seconds / 60);
+    const m = Math.floor(seconds / (60));
     const s = Math.floor(seconds % 60);
     return `${m}:${s.toString().padStart(2, '0')}`;
   };
 
-  const scoreColor = clip.engagementScore >= 80
-    ? 'text-green-400 bg-green-500/10'
-    : clip.engagementScore >= 60
-    ? 'text-yellow-400 bg-yellow-500/10'
-    : 'text-gray-400 bg-gray-500/10';
+  const emotionEmojis = {
+    funny: '🔥 Funny',
+    emotional: '❤️ Emotional',
+    motivational: '🏆 Motivational',
+    educational: '💡 Educational',
+    neutral: '😐 Neutral'
+  };
+
+  const getScoreColor = (score) => {
+    if (score >= 90) return 'text-purple-400 border-purple-500/30 bg-purple-500/10 shadow-[0_0_10px_rgba(168,85,247,0.2)]';
+    if (score >= 80) return 'text-sky-400 border-sky-500/30 bg-sky-500/10';
+    if (score >= 70) return 'text-green-400 border-green-500/30 bg-green-500/10';
+    return 'text-gray-400 border-white/10 bg-white/5';
+  };
 
   return (
-    <div className="card hover:border-white/20 transition-all duration-300 animate-slide-up group">
-      {/* Video Preview */}
-      <div className="relative rounded-xl overflow-hidden bg-slate-900 mb-4 aspect-video">
+    <div 
+      onClick={() => onSelect && onSelect(clip)}
+      className={clsx(
+        "card cursor-pointer transition-all duration-500 group relative overflow-hidden",
+        isActive ? "border-purple-500/50 ring-2 ring-purple-500/20 bg-purple-500/5 scale-[1.02]" : "hover:border-white/20 hover:translate-y-[-4px]"
+      )}
+    >
+      {/* Decorative Glow for high scores */}
+      {clip.viralScore >= 90 && (
+        <div className="absolute -top-10 -right-10 w-32 h-32 bg-purple-500/20 blur-[60px] pointer-events-none" />
+      )}
+
+      {/* Video Preview Section */}
+      <div className="relative rounded-xl overflow-hidden bg-slate-900 mb-5 aspect-video border border-white/5">
         <video
           src={clip.clipUrl}
-          className="w-full h-full object-cover"
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
           preload="metadata"
         />
-        <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-          
-          <a
-            href={clip.clipUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white/30 transition-colors"
-          >
-            <Play size={20} className="text-white ml-0.5" />
-          </a>
+        
+        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+            <div className="w-12 h-12 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center border border-white/20 transform scale-75 group-hover:scale-100 transition-transform duration-500">
+                <Play size={20} className="text-white fill-white ml-0.5" />
+            </div>
         </div>
 
-        {/* Clip number badge */}
-        <div className="absolute top-2 left-2 w-7 h-7 bg-sky-600 rounded-lg flex items-center justify-center text-xs font-bold">
-          {index + 1}
+        {/* Clip Index */}
+        <div className="absolute top-2 left-2 px-2 py-0.5 bg-black/60 backdrop-blur-md border border-white/10 rounded text-[10px] font-bold text-gray-300">
+          CLIP {index + 1}
         </div>
 
-        {/* Score badge */}
-        <div className={clsx('absolute top-2 right-2 badge gap-1', scoreColor)}>
-          <Zap size={10} />
-          {clip.engagementScore}
+        {/* Viral Score Badge */}
+        <div className={clsx(
+            "absolute top-2 right-2 flex items-center gap-1.5 px-3 py-1 rounded-full border text-[11px] font-bold backdrop-blur-md",
+            getScoreColor(clip.viralScore)
+        )}>
+          <Sparkles size={12} className="animate-pulse" />
+          VIRAL: {clip.viralScore}
+        </div>
+
+        {/* Duration Overlay */}
+        <div className="absolute bottom-2 right-2 px-1.5 py-0.5 bg-black/80 text-[9px] font-mono text-white rounded">
+          {clip.duration}s
         </div>
       </div>
 
-      {/* Info */}
-      <div>
-        <h4 className="font-semibold text-white mb-1 truncate">{clip.title}</h4>
+      {/* Badges Row */}
+      <div className="flex flex-wrap gap-2 mb-4">
+        <span className="px-2 py-0.5 bg-white/5 border border-white/10 rounded text-[10px] font-bold uppercase text-gray-400 tracking-wider">
+           {emotionEmojis[clip.emotion] || clip.emotion}
+        </span>
+        <span className="px-2 py-0.5 bg-sky-500/10 border border-sky-500/20 rounded text-[10px] font-bold uppercase text-sky-400 tracking-wider">
+           {clip.category}
+        </span>
+      </div>
 
-        {clip.aiReason && (
-          <p className="text-xs text-gray-500 mb-3 line-clamp-2">{clip.aiReason}</p>
-        )}
+      {/* Title & Info */}
+      <div className="space-y-4">
+        <h4 className="font-bold text-white text-lg leading-tight group-hover:text-purple-400 transition-colors">
+            {clip.title}
+        </h4>
 
-        <div className="flex items-center gap-3 text-xs text-gray-500 mb-3">
-          <div className="flex items-center gap-1">
-            <Clock size={11} />
-            <span>{formatTime(clip.startTime)} → {formatTime(clip.endTime)}</span>
-          </div>
-          <span className="text-gray-700">•</span>
-          <span>{clip.duration}s</span>
+        {/* reasoning section */}
+        <div className="space-y-2.5 p-3 rounded-xl bg-black/30 border border-white/5">
+            <div className="flex items-start gap-2">
+                <Brain size={14} className="text-purple-400 shrink-0 mt-0.5" />
+                <div className="space-y-0.5">
+                    <p className="text-[10px] font-bold text-purple-400/70 uppercase">Why this clip?</p>
+                    <p className="text-xs text-gray-400 line-clamp-2 leading-relaxed italic">
+                        "{clip.aiReason || clip.reason}"
+                    </p>
+                </div>
+            </div>
+            
+            <div className="flex items-start gap-2 pt-2 border-t border-white/5">
+                <TrendingUp size={14} className="text-green-400 shrink-0 mt-0.5" />
+                <div className="space-y-0.5">
+                    <p className="text-[10px] font-bold text-green-400/70 uppercase">Why this part?</p>
+                    <p className="text-xs text-gray-300 line-clamp-2 leading-relaxed italic">
+                        "{clip.whyThisPart || clip.why_this_part}"
+                    </p>
+                </div>
+            </div>
         </div>
 
-        {clip.tags?.length > 0 && (
-          <div className="flex flex-wrap gap-1.5">
-            {clip.tags.slice(0, 3).map((tag, i) => (
-              <span key={i} className="badge bg-slate-900 text-gray-400 gap-1 border border-white/10">
-                <Tag size={9} />
-                {tag}
-              </span>
-            ))}
-          </div>
-        )}
+        {/* Keywords */}
+        <div className="flex flex-wrap gap-1.5 pt-2">
+          {(clip.keywords || clip.tags || []).slice(0, 4).map((kw, i) => (
+            <span key={i} className="text-[9px] px-2 py-0.5 bg-slate-900 text-gray-500 rounded-md border border-white/5 group-hover:border-purple-500/20 transition-colors">
+              #{kw}
+            </span>
+          ))}
+        </div>
 
-
-        <a
-          href={clip.clipUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="btn-primary w-full justify-center mt-4 text-sm py-2"
-        >
-          <Play size={14} />
-          Watch Clip
-        </a>
+        <div className="flex items-center justify-between pt-2">
+            <div className="flex items-center gap-1.5 text-[10px] font-mono text-gray-500">
+                <Clock size={12} />
+                <span>{formatTime(clip.startTime)} - {formatTime(clip.endTime)}</span>
+            </div>
+            <div className="flex items-center gap-1 text-[10px] text-gray-500 italic">
+                <Info size={10} />
+                {(clip.confidence * 100).toFixed(0)}% AI Confidence
+            </div>
+        </div>
       </div>
     </div>
   );
-}
+}
