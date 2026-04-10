@@ -26,49 +26,58 @@ export default function VideoDetailPage() {
 
   const { status, clips: polledClips, loading: polling, startPolling } = useVideoStatus(id);
 
-  useEffect(() => {
-    const fetchVideo = async () => {
-      try {
-        const response = await videoAPI.getById(id);
-        
-        console.log("\n" + "=".repeat(60));
-        console.log("CRITICAL DEBUG: API RESPONSE IN PAGE");
-        console.log(`Status: ${response.data.status}`);
-        console.log(`Transcript Count: ${response.data.transcript?.length}`);
-        console.log(`AI Segments Count: ${response.data.aiSegments?.length}`);
-        if (response.data.transcript?.length > 0) {
-            console.log("First Transcript Item:", response.data.transcript[0]);
-        }
-        console.log("=".repeat(60) + "\n");
+  const fetchVideo = async () => {
+    try {
+      const response = await videoAPI.getById(id);
+      
+      console.log("\n" + "=".repeat(60));
+      console.log("CRITICAL DEBUG: API RESPONSE IN PAGE", response.data);
+      console.log(`Status: ${response.data.status}`);
+      console.log(`Clips Array Length (from video): ${response.data.clips?.length}`);
+      console.log("=".repeat(60) + "\n");
 
-        setVideo(response.data);
+      setVideo(response.data);
 
-        if (response.data.status === 'completed') {
-          const clipsRes = await clipAPI.getByVideo(id);
-          setClips(clipsRes.data);
-          // Set first clip as selected by default if exists
-          if (clipsRes.data.length > 0) setSelectedClip(clipsRes.data[0]);
-        }
-        if (response.data.status === 'processing') {
-          startPolling();
-        }
-      } catch (err) {
-        console.error(err);
+      if (response.data.status === 'completed' && clips.length === 0) {
+        const clipsRes = await clipAPI.getByVideo(id);
+        console.log("DEBUG: Loaded Clips from API:", clipsRes.data);
+        setClips(clipsRes.data);
+        if (clipsRes.data.length > 0 && !selectedClip) setSelectedClip(clipsRes.data[0]);
+      }
+    } catch (err) {
+      console.error(err);
+      if (!video) {
         toast.error('Video not found');
         navigate('/videos');
-      } finally {
-        setLoading(false);
       }
-    };
-    fetchVideo();
-  }, [id]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    if (polledClips.length > 0) {
+    fetchVideo();
+    
+    // Setup polling interval for status updates
+    const interval = setInterval(() => {
+       // Only poll if video isn't finished yet
+       if (video?.status !== 'completed' && video?.status !== 'failed') {
+         fetchVideo();
+       }
+    }, 5000);
+
+
+    return () => clearInterval(interval);
+  }, [id, video?.status]);
+
+  useEffect(() => {
+    if (polledClips && polledClips.length > 0) {
+        console.log("DEBUG: Received clips from polling hook:", polledClips);
         setClips(polledClips);
         if (!selectedClip) setSelectedClip(polledClips[0]);
     }
   }, [polledClips]);
+
 
   useEffect(() => {
     if (status && video) {
