@@ -66,9 +66,23 @@ def upload_all_clips(processed_clips: list, video_id: str) -> list:
     Upload all processed clips to Cloudinary.
     Returns clips with Cloudinary URLs added.
     """
-    uploaded_clips = []
+    final_clips = []
 
     for i, clip in enumerate(processed_clips):
+        clip_data = {
+            "start": clip.get("start_time"),
+            "end": clip.get("end_time"),
+            "duration": clip.get("duration"),
+            "viral_score": clip.get("viral_score"),
+            "reason": clip.get("reason"),
+            "why_this_part": clip.get("why_this_part"),
+            "emotion": clip.get("emotion"),
+            "category": clip.get("category"),
+            "keywords": clip.get("keywords", []),
+            "analysis": clip.get("analysis", {}),
+            "title": clip.get("title", f"Clip {i+1}")
+        }
+
         try:
             upload_result = upload_clip_to_cloudinary(
                 clip_path=clip["local_path"],
@@ -76,22 +90,20 @@ def upload_all_clips(processed_clips: list, video_id: str) -> list:
                 clip_index=i
             )
 
-            uploaded_clips.append({
-                "title": clip["title"],
-                "description": clip["description"],
-                "startTime": clip["start_time"],
-                "endTime": clip["end_time"],
-                "duration": clip["duration"],
-                "engagementScore": clip["engagement_score"],
-                "tags": clip["tags"],
-                "aiReason": clip["ai_reason"],
-                "clipUrl": upload_result["clip_url"],
-                "cloudinaryPublicId": upload_result["cloudinary_public_id"],
-                "thumbnailUrl": upload_result["thumbnail_url"],
+            clip_data.update({
+                "clipUrl": upload_result.get("clip_url"),
+                "cloudinaryPublicId": upload_result.get("cloudinary_public_id"),
+                "thumbnailUrl": upload_result.get("thumbnail_url"),
             })
 
         except Exception as e:
-            print(f"⚠️ Failed to upload clip {i+1}: {e}")
-            continue
+            print(f"❌ UPLOAD ERROR for clip {i+1}: {str(e)}")
+            clip_data.update({
+                "clipUrl": None,
+                "uploadError": str(e)
+            })
 
-    return uploaded_clips
+        # ALWAYS append, never skip
+        final_clips.append(clip_data)
+
+    return final_clips

@@ -103,6 +103,12 @@ async def process_video(request: ProcessRequest):
         print(f"Transcript Count: {len(transcript_segments)}")
         if transcript_segments:
             print(f"Sample Segment Time: Start={transcript_segments[0].get('start')}, End={transcript_segments[0].get('end')}")
+        
+        # FAIL HARD IF NO CLIPS
+        if len(uploaded_clips) == 0:
+            print("❌ ERROR: ZERO CLIPS GENERATED!")
+            raise Exception("CRITICAL FAILURE: No clips were successfully generated or uploaded.")
+            
         print("!" * 60 + "\n")
 
         return {
@@ -111,6 +117,7 @@ async def process_video(request: ProcessRequest):
             "transcript": transcript_segments,
             "ai_segments": ai_segments
         }
+
 
 
 
