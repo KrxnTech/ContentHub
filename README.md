@@ -12,10 +12,12 @@ The platform follows a microservices-inspired architecture to separate high-inte
 
 ## Some Project SnapShots ✨
 
-<img width="1247" height="579" alt="image" src="https://github.com/user-attachments/assets/bcf87a19-150a-46fa-9053-73eb9bdbca50" />
-<img width="918" height="729" alt="image" src="https://github.com/user-attachments/assets/8214fecb-5c6b-4248-99d7-26a7aca3b80d" />
-<img width="981" height="589" alt="image" src="https://github.com/user-attachments/assets/3adb8cff-baa2-433a-a1ad-b7c38ad8a69c" />
-<img width="1411" height="835" alt="image" src="https://github.com/user-attachments/assets/06f492e1-c57d-4df8-88e4-f2e4fd3d7b85" />
+<img width="1494" height="868" alt="image" src="https://github.com/user-attachments/assets/352d13fb-e5dd-4bfd-b6ff-6ce4e00e29de" />
+<img width="900" height="828" alt="image" src="https://github.com/user-attachments/assets/2dd6cd46-241b-4026-85cf-bb5a18032da4" />
+<img width="1398" height="550" alt="image" src="https://github.com/user-attachments/assets/6738801a-4d35-4de4-b063-2df33a5777f1" />
+<img width="1526" height="831" alt="image" src="https://github.com/user-attachments/assets/44f23a78-5a86-4e7c-b38b-096565cff0cb" />
+<img width="1419" height="562" alt="image" src="https://github.com/user-attachments/assets/5c7328c2-5266-42a8-902f-7cdec144db2f" />
+<img width="1474" height="690" alt="image" src="https://github.com/user-attachments/assets/3881b831-9a5c-43a2-8884-260fd1bc91a7" />
 
 ## Technology Stack
 
