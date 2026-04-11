@@ -58,8 +58,8 @@ const processVideo = asyncHandler(async (req, res) => {
     .then(async (result) => {
       console.log("\n" + "=".repeat(60));
       console.log("CRITICAL DEBUG: AI RESPONSE RECEIVED");
-      console.log(JSON.stringify({ 
-        hasClips: !!result.clips, 
+      console.log(JSON.stringify({
+        hasClips: !!result.clips,
         clipsCount: result.clips?.length,
         hasTranscript: !!result.transcript
       }, null, 2));
