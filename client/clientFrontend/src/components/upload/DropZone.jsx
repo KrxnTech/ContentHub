@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Upload, Film, X } from 'lucide-react';
 import clsx from 'clsx';
@@ -17,23 +17,29 @@ export default function DropZone({ onFileSelect, selectedFile, onClear }) {
 
   if (selectedFile) {
     return (
-      <div className="border-2 border-sky-500/50 bg-sky-500/5 rounded-2xl p-8 text-center animate-fade-in">
+      <div className="border border-[#00ff88]/40 bg-[#12121a] p-6 text-center animate-fade-in">
         <div className="flex items-center justify-center gap-4">
-          <div className="w-14 h-14 bg-sky-600/20 rounded-xl flex items-center justify-center">
-            <Film size={28} className="text-sky-400" />
+
+          <div className="w-14 h-14 border border-[#00ff88]/40 flex items-center justify-center text-[#00ff88]">
+            <Film size={26} />
           </div>
+
           <div className="text-left flex-1 min-w-0">
-            <p className="font-semibold text-white truncate">{selectedFile.name}</p>
-            <p className="text-sm text-gray-400 mt-0.5">
+            <p className="font-mono text-white truncate text-sm">
+              {selectedFile.name}
+            </p>
+            <p className="text-xs text-gray-400 mt-1">
               {(selectedFile.size / (1024 * 1024)).toFixed(2)} MB
             </p>
           </div>
+
           <button
             onClick={onClear}
-            className="w-8 h-8 bg-slate-800 hover:bg-red-500/20 rounded-lg flex items-center justify-center transition-colors text-gray-400 hover:text-red-400"
+            className="w-8 h-8 border border-[#2a2a3a] text-gray-400 hover:border-red-500 hover:text-red-400 hover:bg-red-500/10 transition"
           >
-            <X size={16} />
+            <X size={14} />
           </button>
+
         </div>
       </div>
     );
@@ -43,35 +49,45 @@ export default function DropZone({ onFileSelect, selectedFile, onClear }) {
     <div
       {...getRootProps()}
       className={clsx(
-        'border-2 border-dashed rounded-2xl p-12 text-center cursor-pointer transition-all duration-300',
+        'border border-dashed p-10 text-center cursor-pointer transition-all duration-300 bg-[#0a0a0f]',
         isDragActive
-          ? 'border-sky-500 bg-sky-500/10 scale-[1.01]'
-          : 'border-white/20 hover:border-sky-500/50 hover:bg-white/5'
+          ? 'border-[#00ff88] bg-[#00ff88]/5 scale-[1.01]'
+          : 'border-[#2a2a3a] hover:border-[#00ff88]/40 hover:bg-[#12121a]'
       )}
     >
       <input {...getInputProps()} />
+
       <div className="flex flex-col items-center gap-4">
-        <div className={clsx(
-          'w-16 h-16 rounded-2xl flex items-center justify-center transition-colors',
-          isDragActive ? 'bg-sky-500/20' : 'bg-slate-800'
-        )}>
-          <Upload size={32} className={isDragActive ? 'text-sky-400' : 'text-gray-500'} />
+
+        <div
+          className={clsx(
+            'w-16 h-16 flex items-center justify-center border transition',
+            isDragActive
+              ? 'border-[#00ff88] text-[#00ff88]'
+              : 'border-[#2a2a3a] text-gray-500'
+          )}
+        >
+          <Upload size={28} />
         </div>
+
         <div>
-          <p className="text-lg font-semibold text-white mb-1">
-            {isDragActive ? 'Drop your video here' : 'Drag & drop your video'}
+          <p className="text-sm font-mono uppercase tracking-wide text-white mb-1">
+            {isDragActive ? 'Drop video here' : 'Drag & drop video'}
           </p>
-          <p className="text-gray-400 text-sm">or click to browse files</p>
+          <p className="text-xs text-gray-400">
+            or click to browse files
+          </p>
         </div>
-        <div className="flex items-center gap-2 text-xs text-gray-600">
-          <span className="badge bg-slate-800 text-gray-400">MP4</span>
-          <span className="badge bg-slate-800 text-gray-400">MOV</span>
-          <span className="badge bg-slate-800 text-gray-400">AVI</span>
-          <span className="badge bg-slate-800 text-gray-400">MKV</span>
-          <span className="text-gray-600">• Max 500MB</span>
+
+        <div className="flex items-center gap-2 text-[10px] font-mono text-gray-500">
+          <span className="border border-[#2a2a3a] px-2 py-1">MP4</span>
+          <span className="border border-[#2a2a3a] px-2 py-1">MOV</span>
+          <span className="border border-[#2a2a3a] px-2 py-1">AVI</span>
+          <span className="border border-[#2a2a3a] px-2 py-1">MKV</span>
+          <span>• Max 500MB</span>
         </div>
+
       </div>
     </div>
-
   );
 }

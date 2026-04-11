@@ -10,46 +10,95 @@ const features = [
 
 export default function HomePage() {
   return (
-    <div className="animate-fade-in">
-      {/* Hero */}
-      <div className="text-center py-20">
-        <div className="inline-flex items-center gap-2 badge bg-sky-600/20 text-sky-400 border border-sky-500/30 mb-6 px-4 py-2">
-          <Zap size={14} />
-          AI-Powered Video Clipping
-        </div>
-        <h1 className="text-5xl sm:text-6xl font-bold text-white mb-6 leading-tight">
-          Turn Long Videos Into
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-blue-400 block">
-            Viral Clips Instantly
+    <div className="relative min-h-screen bg-[#0a0a0f] text-[#e0e0e0] overflow-hidden">
+
+      {/* GRID BACKGROUND */}
+      <div className="absolute inset-0 -z-10 opacity-20 bg-[linear-gradient(rgba(0,255,136,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,136,0.05)_1px,transparent_1px)] bg-[size:50px_50px] animate-[slowMove_20s_linear_infinite]" />
+
+      {/* SCANLINES */}
+      <div className="pointer-events-none absolute inset-0 -z-10 bg-[repeating-linear-gradient(0deg,transparent,transparent_2px,rgba(0,0,0,0.4)_2px,rgba(0,0,0,0.4)_4px)]" />
+
+      {/* HERO */}
+      <div className="text-center py-24 px-4 animate-[float_6s_ease-in-out_infinite]">
+
+        <h1 className="mt-8 text-5xl sm:text-7xl font-black uppercase tracking-widest text-[#00ff88] leading-tight">
+          Turn Long Videos
+          <br />
+          <span className="text-white">
+            Into Viral Clips
           </span>
         </h1>
-        <p className="text-xl text-gray-400 mb-10 max-w-2xl mx-auto">
-          Upload your video and let AI automatically find and extract the most engaging moments — ready to share in seconds.
+
+        <p className="mt-6 text-gray-400 max-w-xl mx-auto font-mono text-sm tracking-wide opacity-80">
+          {'>'} Upload video → AI extracts high-engagement segments → export ready clips
         </p>
-        <div className="flex items-center justify-center gap-4">
-          <Link to="/upload" className="btn-primary text-base px-8 py-3">
-            <Upload size={18} />
-            Upload Video
+
+        {/* BUTTONS */}
+        <div className="flex flex-col sm:flex-row justify-center gap-4 mt-10">
+
+          <Link
+            to="/upload"
+            className="px-8 py-3 border-2 border-[#00ff88] text-[#00ff88] uppercase tracking-wider font-mono transition-all duration-200 hover:bg-[#00ff88] hover:text-black hover:scale-105 hover:shadow-[0_0_20px_#00ff88]"
+            style={{
+              clipPath:
+                'polygon(0 10px,10px 0,calc(100% - 10px) 0,100% 10px,100% calc(100% - 10px),calc(100% - 10px) 100%,10px 100%,0 calc(100% - 10px))',
+            }}
+          >
+            <Upload size={18} className="inline mr-2" />
+            Upload
           </Link>
-          <Link to="/videos" className="btn-secondary text-base px-8 py-3">
-            <Film size={18} />
-            My Videos
+
+          <Link
+            to="/videos"
+            className="px-8 py-3 border border-[#ff00ff] text-[#ff00ff] uppercase tracking-wider font-mono transition-all duration-200 hover:bg-[#ff00ff] hover:text-black hover:scale-105 hover:shadow-[0_0_20px_#ff00ff]"
+            style={{
+              clipPath:
+                'polygon(0 10px,10px 0,calc(100% - 10px) 0,100% 10px,100% calc(100% - 10px),calc(100% - 10px) 100%,10px 100%,0 calc(100% - 10px))',
+            }}
+          >
+            <Film size={18} className="inline mr-2" />
+            Library
           </Link>
+
         </div>
       </div>
 
-      {/* Features */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 py-12">
-        {features.map(({ icon: Icon, title, desc }, i) => (
-          <div key={i} className="card text-center hover:border-sky-500/30 transition-all">
-            <div className="w-12 h-12 bg-sky-600/20 rounded-xl flex items-center justify-center mx-auto mb-4">
-              <Icon size={24} className="text-sky-400" />
-            </div>
+      {/* FEATURES */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 px-4 py-16">
 
-            <h3 className="font-semibold text-white mb-2">{title}</h3>
-            <p className="text-sm text-gray-500">{desc}</p>
+        {features.map(({ icon: Icon, title, desc }, i) => (
+          <div
+            key={i}
+            className="relative p-6 bg-[#12121a] border border-[#2a2a3a] hover:border-[#00ff88] transition-all duration-300 group hover:-translate-y-2 hover:shadow-[0_0_20px_#00ff88]/20"
+            style={{
+              clipPath:
+                'polygon(0 10px,10px 0,calc(100% - 10px) 0,100% 10px,100% calc(100% - 10px),calc(100% - 10px) 100%,10px 100%,0 calc(100% - 10px))',
+              animation: `float 5s ease-in-out infinite`,
+              animationDelay: `${i * 0.3}s`,
+            }}
+          >
+
+            {/* Glow */}
+            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition bg-[#00ff88]/5 blur-xl" />
+
+            <div className="relative z-10 text-center">
+
+              <div className="w-12 h-12 mx-auto mb-4 flex items-center justify-center border border-[#00ff88]/40 text-[#00ff88] group-hover:shadow-[0_0_10px_#00ff88] transition">
+                <Icon size={22} />
+              </div>
+
+              <h3 className="text-white font-mono uppercase tracking-wide text-sm mb-2">
+                {title}
+              </h3>
+
+              <p className="text-xs text-gray-400 font-mono">
+                {desc}
+              </p>
+
+            </div>
           </div>
         ))}
+
       </div>
     </div>
   );

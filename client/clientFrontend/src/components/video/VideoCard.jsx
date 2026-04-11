@@ -1,72 +1,100 @@
 import { Link } from 'react-router-dom';
 import { Play, Trash2, Scissors, Calendar } from 'lucide-react';
 import StatusBadge from './StatusBadge';
-import clsx from 'clsx';
 
 export default function VideoCard({ video, onDelete }) {
-  const formatDate = (date) => new Date(date).toLocaleDateString('en-US', {
-    month: 'short', day: 'numeric', year: 'numeric'
-  });
+
+  const formatDate = (date) =>
+    new Date(date).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
 
   return (
-    <div className="card group hover:border-white/20 transition-all duration-300 animate-slide-up">
-      {/* Thumbnail */}
-      <div className="relative rounded-xl overflow-hidden bg-slate-900 mb-4 aspect-video">
+    <div
+      className="group bg-[#12121a] border border-[#2a2a3a] p-4 transition-all duration-300 hover:border-[#00ff88]"
+      style={{
+        clipPath:
+          'polygon(0 10px,10px 0,calc(100% - 10px) 0,100% 10px,100% calc(100% - 10px),calc(100% - 10px) 100%,10px 100%,0 calc(100% - 10px))',
+      }}
+    >
+
+      {/* THUMBNAIL */}
+      <div className="relative mb-4 aspect-video bg-black overflow-hidden">
+
         {video.thumbnailUrl ? (
           <img
             src={video.thumbnailUrl}
             alt={video.title}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <Play size={40} className="text-gray-700" />
+          <div className="w-full h-full flex items-center justify-center text-[#00ff88]">
+            <Play size={40} />
           </div>
         )}
-        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+
+        {/* HOVER OVERLAY */}
+        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+
           <Link
             to={`/videos/${video._id}`}
-            className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white/30 transition-colors"
+            className="w-12 h-12 border border-[#00ff88] text-[#00ff88] flex items-center justify-center hover:bg-[#00ff88] hover:text-black transition"
           >
-            <Play size={20} className="text-white ml-0.5" />
+            <Play size={18} />
           </Link>
+
         </div>
+
+        {/* STATUS */}
         <div className="absolute top-2 right-2">
           <StatusBadge status={video.status} />
         </div>
+
       </div>
 
-      {/* Info */}
+      {/* INFO */}
       <div>
-        <h3 className="font-semibold text-white truncate mb-2 group-hover:text-sky-400 transition-colors">
+
+        <h3 className="text-white font-mono text-sm uppercase tracking-wide mb-2 truncate group-hover:text-[#00ff88] transition">
           {video.title}
         </h3>
 
-        <div className="flex items-center justify-between text-xs text-gray-500">
+        <div className="flex justify-between text-xs text-gray-400 font-mono">
+
           <div className="flex items-center gap-1">
             <Calendar size={12} />
             <span>{formatDate(video.createdAt)}</span>
           </div>
+
           {video.clips?.length > 0 && (
-            <div className="flex items-center gap-1 text-sky-400">
+            <div className="flex items-center gap-1 text-[#00ff88]">
               <Scissors size={12} />
-              <span>{video.clips.length} clips</span>
+              <span>{video.clips.length}</span>
             </div>
           )}
+
         </div>
 
-        {/* Actions */}
-        <div className="flex items-center gap-2 mt-4">
-          <Link to={`/videos/${video._id}`} className="btn-primary flex-1 justify-center text-sm py-2">
-            <Play size={14} />
+        {/* ACTIONS */}
+        <div className="flex gap-2 mt-4">
+
+          <Link
+            to={`/videos/${video._id}`}
+            className="flex-1 text-center py-2 border border-[#00ff88] text-[#00ff88] font-mono text-xs uppercase hover:bg-[#00ff88] hover:text-black transition"
+          >
+            <Play size={14} className="inline mr-1" />
             View
           </Link>
+
           <button
             onClick={() => onDelete(video._id)}
-            className="w-9 h-9 bg-slate-900 hover:bg-red-500/20 rounded-xl flex items-center justify-center transition-colors text-gray-500 hover:text-red-400 border border-white/10"
+            className="w-9 h-9 border border-[#2a2a3a] text-gray-400 hover:border-red-500 hover:text-red-400 hover:bg-red-500/10 transition"
           >
             <Trash2 size={14} />
           </button>
+
         </div>
 
       </div>

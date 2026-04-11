@@ -6,10 +6,19 @@
   * {
     box-sizing: border-box;
   }
-  
+
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
   body {
-    @apply bg-slate-950 text-white antialiased;
+    background-color: #0a0a0f;
+    /* 🔥 MAIN BG FIXED */
+    color: #ffffff;
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
   }
 
   ::-webkit-scrollbar {
@@ -17,28 +26,76 @@
   }
 
   ::-webkit-scrollbar-track {
-    @apply bg-slate-900;
+    background: #0a0a0f;
+    /* ✅ FIXED */
   }
 
   ::-webkit-scrollbar-thumb {
-    @apply bg-slate-800 rounded-full;
+    background: #2a2a3a;
+    border-radius: 999px;
   }
 }
 
 @layer components {
+
+  /* PRIMARY BUTTON */
   .btn-primary {
-    @apply bg-sky-600 hover:bg-sky-700 text-white font-semibold py-2.5 px-6 rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2;
+    @apply border border-[#00ff88] text-[#00ff88] font-mono uppercase tracking-wider py-2.5 px-6 transition;
   }
 
+  .btn-primary:hover {
+    @apply bg-[#00ff88] text-black;
+  }
+
+  /* SECONDARY BUTTON */
   .btn-secondary {
-    @apply bg-slate-800 hover:bg-slate-700 text-white font-semibold py-2.5 px-6 rounded-xl transition-all duration-200 flex items-center gap-2 border border-white/10;
+    @apply border border-[#2a2a3a] text-gray-300 font-mono py-2.5 px-6 transition;
   }
 
+  .btn-secondary:hover {
+    @apply border-[#00ff88] text-[#00ff88];
+  }
+
+  /* CARD SYSTEM */
   .card {
-    @apply bg-slate-800 rounded-2xl border border-white/10 p-6;
+    background-color: #12121a;
+    /* ✅ FIXED CARD BG */
+    border: 1px solid #2a2a3a;
+    /* ✅ CONSISTENT BORDER */
+    padding: 1.5rem;
   }
 
+  /* BADGE */
   .badge {
-    @apply inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium;
+    @apply inline-flex items-center px-2 py-1 text-xs font-mono uppercase tracking-wider;
+  }
+}
+
+/* ANIMATIONS (unchanged but clean) */
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+@keyframes slowMove {
+  0% {
+    transform: translateY(0);
+  }
+
+  100% {
+    transform: translateY(-50px);
   }
 }

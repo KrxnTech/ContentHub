@@ -19,72 +19,121 @@ export default function UploadPage() {
     try {
       const video = await uploadVideo(file, title);
       navigate(`/videos/${video._id}`);
-    } catch (err) {
-      // error already shown by hook
-    }
+    } catch (err) { }
   };
 
   return (
-    <div className="max-w-2xl mx-auto animate-fade-in">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-white mb-2">Upload Video</h1>
-        <p className="text-gray-400">Upload your video and let AI generate the best clips</p>
-      </div>
+    <div className="min-h-screen bg-[#0a0a0f] text-[#e0e0e0] relative overflow-hidden">
 
-      <div className="card space-y-6">
-        {/* Title Input */}
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">
-            Video Title <span className="text-red-400">*</span>
-          </label>
-          <input
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="Enter a title for your video..."
-            disabled={uploading}
-            className="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-sky-500 transition-colors disabled:opacity-50"
-          />
+      {/* SUBTLE GRID BACKGROUND */}
+      <div className="absolute inset-0 -z-10 opacity-20 bg-[linear-gradient(rgba(0,255,136,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,136,0.03)_1px,transparent_1px)] bg-[size:50px_50px]" />
 
+      <div className="max-w-2xl mx-auto py-16 px-4 animate-[float_6s_ease-in-out_infinite]">
+
+        {/* HEADER */}
+        <div className="mb-10 text-center">
+          <h1 className="text-4xl font-black uppercase tracking-widest text-[#00ff88]">
+            Upload Video
+          </h1>
+          <p className="text-gray-400 font-mono text-sm mt-2">
+            {'>'} Inject video into AI pipeline
+          </p>
         </div>
 
-        {/* Drop Zone */}
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">Video File</label>
+        {/* MAIN CARD */}
+        <div
+          className="relative p-6 bg-[#12121a] border border-[#2a2a3a] space-y-6"
+          style={{
+            clipPath:
+              'polygon(0 10px,10px 0,calc(100% - 10px) 0,100% 10px,100% calc(100% - 10px),calc(100% - 10px) 100%,10px 100%,0 calc(100% - 10px))',
+          }}
+        >
+
+          {/* TITLE INPUT */}
+          <div>
+            <label className="block text-xs uppercase tracking-widest text-gray-400 mb-2 font-mono">
+              Title *
+            </label>
+
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#00ff88] font-mono">
+                {'>'}
+              </span>
+
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="enter_video_title..."
+                disabled={uploading}
+                className="w-full bg-[#0a0a0f] border border-[#2a2a3a] pl-8 pr-4 py-3 text-[#00ff88] font-mono text-sm focus:outline-none focus:border-[#00ff88] focus:shadow-[0_0_10px_#00ff88] transition-all disabled:opacity-50"
+                style={{
+                  clipPath:
+                    'polygon(0 8px,8px 0,calc(100% - 8px) 0,100% 8px,100% calc(100% - 8px),calc(100% - 8px) 100%,8px 100%,0 calc(100% - 8px))',
+                }}
+              />
+            </div>
+          </div>
+
+          {/* DROP ZONE */}
+          <div>
+            <label className="block text-xs uppercase tracking-widest text-gray-400 mb-2 font-mono">
+              Video File
+            </label>
+
+            {!uploading && (
+              <DropZone
+                onFileSelect={setFile}
+                selectedFile={file}
+                onClear={() => setFile(null)}
+              />
+            )}
+          </div>
+
+          {/* PROGRESS */}
+          {uploading && <UploadProgress progress={uploadProgress} />}
+
+          {/* BUTTON */}
           {!uploading && (
-            <DropZone
-              onFileSelect={setFile}
-              selectedFile={file}
-              onClear={() => setFile(null)}
-            />
+            <button
+              onClick={handleUpload}
+              disabled={!file || !title.trim()}
+              className="w-full py-3 border-2 border-[#00ff88] text-[#00ff88] uppercase tracking-wider font-mono transition-all duration-200 hover:bg-[#00ff88] hover:text-black hover:shadow-[0_0_20px_#00ff88] disabled:opacity-40 disabled:hover:shadow-none"
+              style={{
+                clipPath:
+                  'polygon(0 10px,10px 0,calc(100% - 10px) 0,100% 10px,100% calc(100% - 10px),calc(100% - 10px) 100%,10px 100%,0 calc(100% - 10px))',
+              }}
+            >
+              <Upload size={18} className="inline mr-2" />
+              Upload & Continue
+            </button>
           )}
         </div>
 
-        {/* Upload Progress */}
-        {uploading && <UploadProgress progress={uploadProgress} />}
+        {/* INFO PANEL */}
+        <div
+          className="mt-8 p-4 border border-[#00ff88]/30 bg-[#00ff88]/5"
+          style={{
+            clipPath:
+              'polygon(0 8px,8px 0,calc(100% - 8px) 0,100% 8px,100% calc(100% - 8px),calc(100% - 8px) 100%,8px 100%,0 calc(100% - 8px))',
+          }}
+        >
+          <div className="flex items-start gap-3">
 
-        {/* Upload Button */}
-        {!uploading && (
-          <button
-            onClick={handleUpload}
-            disabled={!file || !title.trim()}
-            className="btn-primary w-full justify-center py-3 text-base"
-          >
-            <Upload size={18} />
-            Upload & Continue
-          </button>
-        )}
-      </div>
+            <Scissors size={18} className="text-[#00ff88] mt-0.5 shrink-0" />
 
-      {/* Info */}
-      <div className="mt-6 p-4 bg-sky-600/10 border border-sky-500/20 rounded-xl">
-        <div className="flex items-start gap-3">
-          <Scissors size={18} className="text-sky-400 mt-0.5 shrink-0" />
-          <div className="text-sm text-gray-400">
-            <p className="font-medium text-sky-400 mb-1">How it works</p>
-            <p>After uploading, click "Process with AI" on your video page. Our AI will analyze your video and automatically generate the most engaging clips.</p>
+            <div className="text-xs font-mono text-gray-400">
+              <p className="text-[#00ff88] uppercase tracking-wider mb-1">
+                Processing Flow
+              </p>
+              <p>
+                {'>'} Upload → Analyze → Extract → Generate clips → Export ready
+              </p>
+            </div>
+
           </div>
         </div>
+
       </div>
     </div>
   );
