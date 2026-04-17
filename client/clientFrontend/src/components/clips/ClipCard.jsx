@@ -1,12 +1,27 @@
-import { Play, Clock, Brain, Sparkles, TrendingUp, Info } from 'lucide-react';
+import { Clock, Brain, Sparkles, TrendingUp, Info } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
 import clsx from 'clsx';
 
-export default function ClipCard({ clip, index, isActive, onSelect }) {
+export default function ClipCard({ clip, index, isActive, onSelect, playingClipId, onPlayingChange }) {
+
+  const [isPlaying, setIsPlaying] = useState(false);
+  const videoRef = useRef(null);
 
   const formatTime = (seconds) => {
     const m = Math.floor(seconds / 60);
     const s = Math.floor(seconds % 60);
     return `${m}:${s.toString().padStart(2, '0')}`;
+  };
+
+  const getClipDuration = () => {
+    if (clip.duration && clip.duration > 0) {
+      return clip.duration.toFixed(1);
+    }
+    if (clip.startTime !== undefined && clip.endTime !== undefined) {
+      const calculatedDuration = clip.endTime - clip.startTime;
+      return calculatedDuration.toFixed(1);
+    }
+    return '0.0';
   };
 
   const emotionEmojis = {
@@ -24,6 +39,29 @@ export default function ClipCard({ clip, index, isActive, onSelect }) {
     return 'text-gray-400 border-[#2a2a3a] bg-[#12121a]';
   };
 
+  const togglePlay = (e) => {
+    e.stopPropagation();
+    if (videoRef.current) {
+      if (isPlaying) {
+        videoRef.current.pause();
+      } else {
+        videoRef.current.play();
+      }
+      setIsPlaying(!isPlaying);
+      onPlayingChange && onPlayingChange(clip._id, !isPlaying);
+    }
+  };
+
+  // Auto-stop when another clip starts playing
+  useEffect(() => {
+    if (playingClipId && playingClipId !== clip._id && isPlaying) {
+      if (videoRef.current) {
+        videoRef.current.pause();
+        setIsPlaying(false);
+      }
+    }
+  }, [playingClipId, clip._id, isPlaying]);
+
   return (
     <div
       onClick={() => onSelect && onSelect(clip)}
@@ -36,20 +74,23 @@ export default function ClipCard({ clip, index, isActive, onSelect }) {
     >
 
       {/* VIDEO */}
-      <div className="relative overflow-hidden mb-5 aspect-video border border-[#2a2a3a] bg-black">
+      <div className="relative overflow-hidden mb-5 aspect-video border border-[#2a2a3a] bg-black" onClick={togglePlay}>
 
         <video
+          ref={videoRef}
           src={clip.clipUrl}
           className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
           preload="metadata"
+          controls
+          onPlay={() => {
+            setIsPlaying(true);
+            onPlayingChange && onPlayingChange(clip._id, true);
+          }}
+          onPause={() => {
+            setIsPlaying(false);
+            onPlayingChange && onPlayingChange(clip._id, false);
+          }}
         />
-
-        {/* HOVER PLAY */}
-        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition">
-          <div className="w-12 h-12 border border-[#00ff88] text-[#00ff88] flex items-center justify-center">
-            <Play size={18} />
-          </div>
-        </div>
 
         {/* INDEX */}
         <div className="absolute top-2 left-2 px-2 py-0.5 bg-black/70 border border-[#2a2a3a] text-[10px] text-gray-400 font-mono">
@@ -67,7 +108,7 @@ export default function ClipCard({ clip, index, isActive, onSelect }) {
 
         {/* DURATION */}
         <div className="absolute bottom-2 right-2 px-1.5 py-0.5 bg-black/80 text-[9px] font-mono text-white">
-          {clip.duration}s
+          {getClipDuration()}s
         </div>
 
       </div>
