@@ -172,4 +172,4 @@ Return JSON exactly as follows:
         "segments": heatmap_segments
     }
 
-
+

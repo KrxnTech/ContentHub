@@ -15,4 +15,4 @@ imageio-ffmpeg==0.5.1
 decorator==4.4.2
 tqdm==4.66.5
 openai-whisper
-setuptools-rust
+setuptools-rust
