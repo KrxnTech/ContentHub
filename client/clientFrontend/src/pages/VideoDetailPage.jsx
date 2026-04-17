@@ -290,6 +290,7 @@ export default function VideoDetailPage() {
             clips={clips}
             activeClipId={selectedClip?._id}
             onSelectClip={setSelectedClip}
+            transcript={video.transcript}
           />
         )}
       </div>
