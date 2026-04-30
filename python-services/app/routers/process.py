@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, BackgroundTasks
 from pydantic import BaseModel
-from app.services.ai_analyzer import analyze_video_for_clips
+from app.services.ai_analyzer import analyze_video_for_clips, deep_analyze_clip
 from app.services.video_processor import process_all_clips
 from app.services.cloudinary_uploader import upload_all_clips
 from app.utils.helpers import download_video, cleanup_files, get_video_duration
@@ -18,6 +18,12 @@ class ProcessRequest(BaseModel):
     video_id: str
     video_url: str
     title: str
+    num_clips: int = 5  # Default to 5 clips, can be set to 3
+
+
+class DeepAnalysisRequest(BaseModel):
+    clip_data: dict
+    transcript_segments: list = None
 
 
 @router.post("/process")
@@ -64,7 +70,7 @@ async def process_video(request: ProcessRequest):
             whisper_result = transcribe_audio(audio_path)
             print(f"✅ Transcription complete ({len(whisper_result['text'])} chars)")
         except Exception as e:
-            print(f"⚠️ Transcription failed, falling back to title-only analysis: {e}")
+            print(f" Transcription failed, falling back to title-only analysis: {e}")
         finally:
             if audio_path:
                 cleanup_files(audio_path)
@@ -73,7 +79,8 @@ async def process_video(request: ProcessRequest):
         analysis_result = analyze_video_for_clips(
             title=request.title,
             duration=duration,
-            whisper_result=whisper_result
+            whisper_result=whisper_result,
+            num_clips=request.num_clips
         )
         
         clip_segments = analysis_result.get("clips", [])
@@ -106,7 +113,7 @@ async def process_video(request: ProcessRequest):
         
         # FAIL HARD IF NO CLIPS
         if len(uploaded_clips) == 0:
-            print("❌ ERROR: ZERO CLIPS GENERATED!")
+            print(" ERROR: ZERO CLIPS GENERATED!")
             raise Exception("CRITICAL FAILURE: No clips were successfully generated or uploaded.")
             
         print("!" * 60 + "\n")
@@ -115,7 +122,9 @@ async def process_video(request: ProcessRequest):
             "success": True,
             "clips": uploaded_clips,
             "transcript": transcript_segments,
-            "ai_segments": ai_segments
+            "ai_segments": ai_segments,
+            "reliability_score": analysis_result.get("reliability_score", 0),
+            "reliability_reasoning": analysis_result.get("reliability_reasoning", "")
         }
 
 
@@ -142,6 +151,34 @@ async def process_video(request: ProcessRequest):
             import shutil
             try:
                 shutil.rmtree(clips_dir)
-                print("🗑️ Cleaned up temp clips folder")
+                print(" Cleaned up temp clips folder")
             except Exception:
                 pass
+
+
+@router.post("/deep-analysis")
+async def deep_analysis(request: DeepAnalysisRequest):
+    """
+    Deep analysis endpoint for a specific clip.
+    Returns detailed insights for engagement, retention, virality, and improvements.
+    """
+    print(f"\n{'='*50}")
+    print(f" Deep Analysis for Clip: {request.clip_data.get('title', 'Unknown')}")
+    print(f"{'='*50}\n")
+
+    try:
+        analysis_result = deep_analyze_clip(
+            clip_data=request.clip_data,
+            transcript_segments=request.transcript_segments
+        )
+
+        return {
+            "success": True,
+            "analysis": analysis_result
+        }
+
+    except Exception as e:
+        error_msg = str(e)
+        print(f"\n DEEP ANALYSIS ERROR: {error_msg}")
+        print(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=error_msg)
