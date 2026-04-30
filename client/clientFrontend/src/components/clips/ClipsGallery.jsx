@@ -1,4 +1,5 @@
 import ClipCard from './ClipCard';
+import DeepAnalysis from '../analysis/DeepAnalysis';
 import { Scissors, FileText, Clock } from 'lucide-react';
 import EmptyState from '../ui/EmptyState';
 import { useState } from 'react';
@@ -6,6 +7,7 @@ import { useState } from 'react';
 export default function ClipsGallery({ clips, activeClipId, onSelectClip, transcript }) {
   const [playingClipId, setPlayingClipId] = useState(null);
   const [showTranscript, setShowTranscript] = useState(false);
+  const [deepAnalysisClip, setDeepAnalysisClip] = useState(null);
 
   const handlePlayingChange = (clipId, isPlaying) => {
     if (isPlaying) {
@@ -19,6 +21,10 @@ export default function ClipsGallery({ clips, activeClipId, onSelectClip, transc
     } else {
       setPlayingClipId(null);
     }
+  };
+
+  const handleDeepAnalysis = (clip) => {
+    setDeepAnalysisClip(clip);
   };
 
   const activeClip = clips.find(c => c._id === activeClipId);
@@ -78,6 +84,7 @@ export default function ClipsGallery({ clips, activeClipId, onSelectClip, transc
               onSelect={onSelectClip}
               playingClipId={playingClipId}
               onPlayingChange={handlePlayingChange}
+              onDeepAnalysis={handleDeepAnalysis}
             />
           ))}
 
@@ -134,6 +141,15 @@ export default function ClipsGallery({ clips, activeClipId, onSelectClip, transc
         )}
 
       </div>
+
+      {/* DEEP ANALYSIS MODAL */}
+      {deepAnalysisClip && (
+        <DeepAnalysis
+          clip={deepAnalysisClip}
+          transcript={transcript}
+          onClose={() => setDeepAnalysisClip(null)}
+        />
+      )}
 
     </div>
   );

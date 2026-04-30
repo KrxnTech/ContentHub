@@ -1,8 +1,8 @@
-import { Clock, Brain, Sparkles, TrendingUp, Info } from 'lucide-react';
+import { Clock, Brain, Sparkles, TrendingUp, Info, BarChart3 } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import clsx from 'clsx';
 
-export default function ClipCard({ clip, index, isActive, onSelect, playingClipId, onPlayingChange }) {
+export default function ClipCard({ clip, index, isActive, onSelect, playingClipId, onPlayingChange, onDeepAnalysis }) {
 
   const [isPlaying, setIsPlaying] = useState(false);
   const videoRef = useRef(null);
@@ -165,17 +165,23 @@ export default function ClipCard({ clip, index, isActive, onSelect, playingClipI
         </div>
 
         {/* FOOTER */}
-        <div className="flex justify-between text-[10px] font-mono text-gray-500">
+        <div className="flex justify-between items-center text-[10px] font-mono text-gray-500">
 
           <div className="flex items-center gap-1">
             <Clock size={10} />
             {formatTime(clip.startTime)} - {formatTime(clip.endTime)}
           </div>
 
-          <div className="flex items-center gap-1">
-            <Info size={10} />
-            {(clip.confidence * 100).toFixed(0)}%
-          </div>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onDeepAnalysis && onDeepAnalysis(clip);
+            }}
+            className="flex items-center gap-1 text-[#00ff88] hover:text-white transition-colors"
+          >
+            <BarChart3 size={10} />
+            Deep Analysis
+          </button>
 
         </div>
 
