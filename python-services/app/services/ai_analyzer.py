@@ -10,6 +10,19 @@ load_dotenv()
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
 
+def _clamp_factor(value: float, weak_default: float = 55.0) -> int:
+    """
+    Enforce the 40–95 range on a single confidence factor.
+    - Values below 20 are treated as missing/weak signal → replaced with weak_default (50–60).
+    - Values below 40 are raised to 40 (floor).
+    - Values above 95 are capped at 95 (ceiling).
+    Always returns an integer.
+    """
+    if value is None or value < 20:
+        value = weak_default
+    return int(min(95, max(40, value)))
+
+
 def deep_analyze_clip(clip_data: dict, transcript_segments: list = None) -> dict:
     """
     Perform deep analysis of a specific clip for short-form content optimization.
@@ -804,30 +817,116 @@ CRITICAL FORMAT RULES:
         if not llm_data.get("improvements", {}).get("audio_music"):
             llm_data.setdefault("improvements", {})["audio_music"] = f"Enhance audio with bass boost and reverb. Use {emotion}-themed background music to amplify emotional impact."
 
-        # === DYNAMIC CONFIDENCE SCORE ===
-        # Based on content clarity, engagement signals, and audio/visual quality
-        content_clarity = 0.8 if clip_text and len(clip_text) > 50 else 0.5
-        engagement_signal = engagement_score / 100
-        audio_quality = 0.7  # Assuming decent audio quality
-        
-        confidence = int((content_clarity * 40 + engagement_signal * 35 + audio_quality * 25))
-        confidence = min(95, max(40, confidence))
+        # === DYNAMIC CONFIDENCE SCORE — 5-Factor Weighted Model ===
+        # Formula: (0.30 × Content Clarity) + (0.25 × Engagement Strength)
+        #        + (0.20 × Retention Stability) + (0.15 × Audio Quality)
+        #        + (0.10 × Emotional Signal Strength)
+        # All factors are clamped to 40–95. Weak/missing signals use a 55 baseline.
 
-        confidence_reasoning = []
-        if content_clarity > 0.7:
-            confidence_reasoning.append("Clear content structure with transcript")
+        # Factor 1: Content Clarity — transcript richness + keyword density
+        if clip_text and len(clip_text) > 200:
+            _raw_clarity = 70 + (len(clip_text) / 100)
+        elif clip_text and len(clip_text) > 50:
+            _raw_clarity = 55 + (len(keywords) * 2)
         else:
-            confidence_reasoning.append("Limited content clarity")
-        
-        if engagement_signal > 0.7:
-            confidence_reasoning.append("Strong engagement signals detected")
-        elif engagement_signal > 0.5:
-            confidence_reasoning.append("Moderate engagement potential")
+            _raw_clarity = 40 + (len(keywords) * 3)   # weak signal → floor will catch it
+        clarity_score = _clamp_factor(_raw_clarity)
+
+        # Factor 2: Engagement Strength — reuse engagement_score (already 35–95)
+        engagement_factor = _clamp_factor(engagement_score)
+
+        # Factor 3: Retention Stability — reuse retention_score (already 30–95)
+        retention_factor = _clamp_factor(retention_score)
+
+        # Factor 4: Audio Quality — emotion-type proxy + clip-seed variance
+        if emotion in ['funny', 'motivational', 'emotional', 'sad', 'romantic', 'heartbreak']:
+            _raw_audio = 65 + (viral_score / 5)
+        elif emotion in ['educational', 'informational']:
+            _raw_audio = 55 + (viral_score / 6)
         else:
-            confidence_reasoning.append("Weak engagement signals")
-        
-        if audio_quality > 0.6:
-            confidence_reasoning.append("Assumed acceptable audio quality")
+            _raw_audio = 50 + (viral_score / 8)   # neutral → default baseline
+        _raw_audio += (clip_seed % 13) - 6        # clip-specific ±6 variance
+        audio_factor = _clamp_factor(_raw_audio)
+
+        # Factor 5: Emotional Signal Strength — reuse emotion_score
+        emotion_factor = _clamp_factor(emotion_score)
+
+        # --- Validation: ensure no factor is below 20 (baseline guard) ---
+        _factors_raw = [clarity_score, engagement_factor, retention_factor, audio_factor, emotion_factor]
+        if any(f < 20 for f in _factors_raw):
+            print("WARNING: Factor below 20 detected — assigning baseline values (55)")
+            clarity_score    = max(55, clarity_score)
+            engagement_factor = max(55, engagement_factor)
+            retention_factor  = max(50, retention_factor)
+            audio_factor      = max(52, audio_factor)
+            emotion_factor    = max(50, emotion_factor)
+
+        # Apply weighted formula
+        raw_confidence = (
+            (0.30 * clarity_score) +
+            (0.25 * engagement_factor) +
+            (0.20 * retention_factor) +
+            (0.15 * audio_factor) +
+            (0.10 * emotion_factor)
+        )
+        confidence = int(min(97, max(40, raw_confidence)))
+
+        # --- Post-formula validation: recalculate if result is too low ---
+        if confidence < 30:
+            print(f"WARNING: Confidence {confidence} below 30 — recalculating with baseline factors")
+            clarity_score     = max(clarity_score, 55)
+            engagement_factor = max(engagement_factor, 55)
+            retention_factor  = max(retention_factor, 50)
+            audio_factor      = max(audio_factor, 52)
+            emotion_factor    = max(emotion_factor, 50)
+            raw_confidence = (
+                (0.30 * clarity_score) +
+                (0.25 * engagement_factor) +
+                (0.20 * retention_factor) +
+                (0.15 * audio_factor) +
+                (0.10 * emotion_factor)
+            )
+            confidence = int(min(97, max(40, raw_confidence)))
+
+        confidence_breakdown = {
+            "clarity":    clarity_score,
+            "engagement": engagement_factor,
+            "retention":  retention_factor,
+            "audio":      audio_factor,
+            "emotion":    emotion_factor
+        }
+
+        confidence_reasoning_parts = []
+        if clarity_score >= 75:
+            confidence_reasoning_parts.append(f"Strong content clarity ({clarity_score})")
+        elif clarity_score >= 55:
+            confidence_reasoning_parts.append(f"Moderate content clarity ({clarity_score})")
+        else:
+            confidence_reasoning_parts.append(f"Baseline content clarity ({clarity_score}) — limited transcript")
+
+        if engagement_factor >= 75:
+            confidence_reasoning_parts.append(f"High engagement strength ({engagement_factor})")
+        elif engagement_factor >= 55:
+            confidence_reasoning_parts.append(f"Moderate engagement ({engagement_factor})")
+        else:
+            confidence_reasoning_parts.append(f"Baseline engagement ({engagement_factor}) — weak hook")
+
+        if retention_factor >= 70:
+            confidence_reasoning_parts.append(f"Stable retention curve ({retention_factor})")
+        else:
+            confidence_reasoning_parts.append(f"Moderate retention risk ({retention_factor})")
+
+        if audio_factor >= 70:
+            confidence_reasoning_parts.append(f"Clear audio signals ({audio_factor})")
+        else:
+            confidence_reasoning_parts.append(f"Baseline audio quality ({audio_factor})")
+
+        if emotion_factor >= 75:
+            confidence_reasoning_parts.append(f"Strong emotional trigger ({emotion_factor})")
+        else:
+            confidence_reasoning_parts.append(f"Moderate emotional signal ({emotion_factor})")
+
+        confidence_reasoning = "; ".join(confidence_reasoning_parts)
 
         print(f"DEBUG: Deep analysis complete with confidence score: {confidence}")
         print(f"{'#'*60}\n")
@@ -897,9 +996,10 @@ CRITICAL FORMAT RULES:
                 "audio_music": llm_data.get("improvements", {}).get("audio_music", "Use trending upbeat audio matching content mood")
             },
             
-            # Confidence score
+            # Confidence score — 5-factor weighted model
             "confidence": confidence,
-            "confidence_reasoning": "; ".join(confidence_reasoning),
+            "confidence_breakdown": confidence_breakdown,
+            "confidence_reasoning": confidence_reasoning,
             
             # Clip data
             "clip_data": {
@@ -968,7 +1068,8 @@ CRITICAL FORMAT RULES:
                 "audio_music": f"Enhance audio with bass boost and reverb. Use {emotion}-themed background music to amplify emotional impact."
             },
             "confidence": 45,
-            "confidence_reasoning": "Analysis unavailable due to processing error - using calculated metrics with intelligent fallbacks",
+            "confidence_breakdown": {"clarity": 40, "engagement": 50, "retention": 45, "audio": 50, "emotion": 45},
+            "confidence_reasoning": "Analysis unavailable due to processing error — fallback metrics applied.",
             "clip_data": {
                 "title": clip_data.get("title"),
                 "duration": clip_data.get("duration"),
@@ -1171,62 +1272,106 @@ Return JSON exactly as follows:
             keyword_density = 0.3 + (random.random() * 0.3)
             has_topic_shift = random.random() > 0.5
 
-        # Calculate audio quality based on emotion intensity (proxy for audio energy)
-        audio_quality = emotion_intensity * 0.8 + (random.random() * 0.2)
+        # === 5-FACTOR WEIGHTED CONFIDENCE SCORE ===
+        # Formula: (0.30 × Content Clarity) + (0.25 × Engagement Strength)
+        #        + (0.20 × Retention Stability) + (0.15 × Audio Quality)
+        #        + (0.10 × Emotional Signal Strength)
 
-        # Calculate dynamic reliability score with more variance
-        content_clarity = text_importance
+        viral_score_val = clip.get("viral_score", 50)
+        clip_emotion = clip.get("emotion", "neutral")
+
+        # Factor 1 — Content Clarity (transcript richness + keyword density)
+        # Normalize 0.0–1.0 inputs → 0–100, then clamp to 40–95
+        _raw_cf_clarity = text_importance * 60 + keyword_density * 40
+        cf_clarity = _clamp_factor(_raw_cf_clarity * 1.0)  # already in 0–100 range
+
+        # Factor 2 — Engagement Strength (viral score + emotion boost)
+        _raw_cf_eng = float(viral_score_val)
+        if clip_emotion in ['funny', 'emotional', 'motivational']:
+            _raw_cf_eng = min(95, _raw_cf_eng + 10)
+        elif clip_emotion in ['neutral', 'informational']:
+            _raw_cf_eng = max(40, _raw_cf_eng - 5)
+        cf_engagement = _clamp_factor(_raw_cf_eng)
+
+        # Factor 3 — Retention Stability (text importance + scene flow + emotion)
         scene_consistency = 0.9 if not has_topic_shift else (0.5 + random.random() * 0.3)
-        relevance = clip.get("viral_score", 50) / 100
+        _raw_cf_ret = text_importance * 50 + scene_consistency * 30 + emotion_intensity * 20
+        cf_retention = _clamp_factor(_raw_cf_ret)
 
-        # Add more variance based on video duration and clip position
+        # Factor 4 — Audio Quality (emotion intensity as proxy; 0–1 → 0–100)
+        audio_quality = emotion_intensity * 0.8 + (random.random() * 0.2)
+        cf_audio = _clamp_factor(audio_quality * 100)
+
+        # Factor 5 — Emotional Signal Strength
+        if clip_emotion in ['funny', 'emotional', 'motivational', 'sad', 'romantic', 'heartbreak', 'nostalgic']:
+            _raw_cf_emo = 75 + emotion_intensity * 20
+        elif clip_emotion in ['educational', 'informational']:
+            _raw_cf_emo = 55 + emotion_intensity * 25
+        else:
+            _raw_cf_emo = 45 + emotion_intensity * 20   # neutral → baseline
+        cf_emotion = _clamp_factor(_raw_cf_emo)
+
+        # --- Validation: baseline guard — no factor may be below 20 ---
+        if any(f < 20 for f in [cf_clarity, cf_engagement, cf_retention, cf_audio, cf_emotion]):
+            print(f"WARNING: Clip {i+1} has factor below 20 — assigning baseline values")
+            cf_clarity    = max(55, cf_clarity)
+            cf_engagement = max(55, cf_engagement)
+            cf_retention  = max(50, cf_retention)
+            cf_audio      = max(52, cf_audio)
+            cf_emotion    = max(50, cf_emotion)
+
+        # Apply weighted formula
         clip_position_ratio = clip_start / duration if duration > 0 else 0.5
-        position_factor = 0.8 if 0.2 < clip_position_ratio < 0.8 else 0.6
+        raw_confidence = (
+            (0.30 * cf_clarity) +
+            (0.25 * cf_engagement) +
+            (0.20 * cf_retention) +
+            (0.15 * cf_audio) +
+            (0.10 * cf_emotion)
+        )
+        reliability_score = int(min(97, max(40, raw_confidence)))
 
-        # Calculate final reliability score with more dynamic factors
-        reliability_score = int((
-            content_clarity * 35 +
-            scene_consistency * 20 +
-            audio_quality * 15 +
-            relevance * 20 +
-            position_factor * 10
-        ))
+        # --- Post-formula validation: recalculate if result is too low ---
+        if reliability_score < 30:
+            print(f"WARNING: Clip {i+1} confidence {reliability_score} below 30 — recalculating")
+            cf_clarity    = max(cf_clarity, 55)
+            cf_engagement = max(cf_engagement, 55)
+            cf_retention  = max(cf_retention, 50)
+            cf_audio      = max(cf_audio, 52)
+            cf_emotion    = max(cf_emotion, 50)
+            raw_confidence = (
+                (0.30 * cf_clarity) +
+                (0.25 * cf_engagement) +
+                (0.20 * cf_retention) +
+                (0.15 * cf_audio) +
+                (0.10 * cf_emotion)
+            )
+            reliability_score = int(min(97, max(40, raw_confidence)))
 
-        # Ensure score is within reasonable bounds
-        reliability_score = max(40, min(95, reliability_score))
+        confidence_breakdown = {
+            "clarity":    cf_clarity,
+            "engagement": cf_engagement,
+            "retention":  cf_retention,
+            "audio":      cf_audio,
+            "emotion":    cf_emotion
+        }
 
-        # Score reasoning
-        reliability_reasoning = []
-        if content_clarity > 0.7:
-            reliability_reasoning.append(f"High content clarity ({int(content_clarity * 100)}%)")
-        elif content_clarity > 0.5:
-            reliability_reasoning.append(f"Moderate content clarity ({int(content_clarity * 100)}%)")
-        else:
-            reliability_reasoning.append(f"Low content clarity ({int(content_clarity * 100)}%)")
-
-        if scene_consistency > 0.8:
-            reliability_reasoning.append("Consistent scene flow")
-        elif scene_consistency > 0.6:
-            reliability_reasoning.append("Some scene transitions")
-        else:
-            reliability_reasoning.append("Frequent scene changes")
-
-        if audio_quality > 0.7:
-            reliability_reasoning.append(f"Clear audio quality ({int(audio_quality * 100)}%)")
-        else:
-            reliability_reasoning.append(f"Variable audio quality ({int(audio_quality * 100)}%)")
-
-        if relevance > 0.7:
-            reliability_reasoning.append(f"High viral relevance ({clip.get('viral_score', 50)})")
-        elif relevance > 0.5:
-            reliability_reasoning.append(f"Moderate viral relevance ({clip.get('viral_score', 50)})")
-        else:
-            reliability_reasoning.append(f"Lower viral relevance ({clip.get('viral_score', 50)})")
-
-        if position_factor > 0.7:
-            reliability_reasoning.append("Optimal clip position in video")
-        else:
-            reliability_reasoning.append("Clip at edge of video timeline")
+        # Build reasoning
+        reliability_reasoning_parts = []
+        reliability_reasoning_parts.append(
+            f"Clarity {cf_clarity} (×0.30) + Engagement {cf_engagement} (×0.25) + "
+            f"Retention {cf_retention} (×0.20) + Audio {cf_audio} (×0.15) + "
+            f"Emotion {cf_emotion} (×0.10) = {reliability_score}"
+        )
+        if cf_clarity < 55:
+            reliability_reasoning_parts.append("Baseline transcript clarity applied")
+        if cf_engagement >= 75:
+            reliability_reasoning_parts.append("Strong engagement potential")
+        elif cf_engagement < 55:
+            reliability_reasoning_parts.append("Weak hook — baseline engagement applied")
+        if cf_retention < 55:
+            reliability_reasoning_parts.append("Scene transitions or neutral emotion limit retention")
+        reliability_reasoning = "; ".join(reliability_reasoning_parts)
 
         analysis_breakdown = {
             "text_importance": text_importance,
@@ -1250,7 +1395,8 @@ Return JSON exactly as follows:
             "description": clip.get("description", clip["reason"]),
             "confidence": reliability_score / 100,
             "reliability_score": reliability_score,
-            "reliability_reasoning": "; ".join(reliability_reasoning),
+            "reliability_reasoning": reliability_reasoning,
+            "confidence_breakdown": confidence_breakdown,
             "analysis": analysis_breakdown
         })
 

@@ -251,20 +251,59 @@ export default function VideoDetailPage() {
               <Brain size={16} />
               Engine Summary
             </div>
-            <div className="card bg-black/20 border-white/5 space-y-6">
-              <div className="space-y-2">
-                <p className="text-[10px] text-gray-500 uppercase font-bold tracking-tight">AI Confidence Score</p>
-                <div className="flex items-end gap-2">
-                  <span className="text-4xl font-black text-white">{(selectedClip?.confidence * 100 || 87).toFixed(0)}%</span>
-                  <span className="text-green-500 text-xs mb-2 font-bold flex items-center gap-1">
-                    <TrendingUp size={12} /> High Reliability
-                  </span>
+              <div className="card bg-black/20 border-white/5 space-y-4">
+                <div className="space-y-2">
+                  <p className="text-[10px] text-gray-500 uppercase font-bold tracking-tight">AI Confidence Score</p>
+                  {(() => {
+                    const bd   = selectedClip?.confidence_breakdown;
+                    const raw  = selectedClip?.reliability_score
+                                 ?? (selectedClip?.confidence ? Math.round(selectedClip.confidence * 100) : null);
+                    const score = raw ?? 0;
+                    const label = score >= 75 ? 'High Reliability'
+                                : score >= 55 ? 'Moderate Reliability'
+                                : 'Low Reliability';
+                    const labelColor = score >= 75 ? 'text-green-500'
+                                     : score >= 55 ? 'text-yellow-500'
+                                     : 'text-red-500';
+                    return (
+                      <>
+                        <div className="flex items-end gap-2">
+                          <span className="text-4xl font-black text-white">{score}%</span>
+                          <span className={`${labelColor} text-xs mb-2 font-bold flex items-center gap-1`}>
+                            <TrendingUp size={12} /> {label}
+                          </span>
+                        </div>
+
+                        {bd && (
+                          <div className="space-y-1.5 mt-3">
+                            {[
+                              { key: 'clarity',    label: 'Clarity',    color: '#00ff88', w: '×0.30' },
+                              { key: 'engagement', label: 'Engagement', color: '#3b82f6', w: '×0.25' },
+                              { key: 'retention',  label: 'Retention',  color: '#a855f7', w: '×0.20' },
+                              { key: 'audio',      label: 'Audio',      color: '#f59e0b', w: '×0.15' },
+                              { key: 'emotion',    label: 'Emotion',    color: '#ec4899', w: '×0.10' },
+                            ].map(({ key, label: fl, color, w }) => (
+                              <div key={key}>
+                                <div className="flex justify-between mb-0.5">
+                                  <span className="text-[9px] text-gray-500 font-mono">{fl} <span className="text-gray-600">{w}</span></span>
+                                  <span className="text-[9px] font-mono" style={{ color }}>{bd[key] ?? 0}</span>
+                                </div>
+                                <div className="w-full bg-white/5 rounded-full h-1">
+                                  <div className="h-1 rounded-full" style={{ width: `${bd[key] ?? 0}%`, backgroundColor: color }} />
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        <p className="text-xs text-gray-400 leading-relaxed mt-3">
+                          The AI model has cross-referenced transcript importance, audio spikes, and emotional shifts using a 5-factor weighted formula.
+                        </p>
+                      </>
+                    );
+                  })()}
                 </div>
-                <p className="text-xs text-gray-400 leading-relaxed mt-4">
-                  The AI model has cross-referenced the transcript importance, audio spikes, and emotional shifts to finalize its confidence in these selections.
-                </p>
               </div>
-            </div>
           </div>
         </section>
       )}

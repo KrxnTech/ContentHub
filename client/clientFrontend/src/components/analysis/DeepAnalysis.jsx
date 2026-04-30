@@ -368,20 +368,63 @@ export default function DeepAnalysis({ clip, transcript, onClose }) {
             </div>
           </div>
 
-          {/* Confidence Score */}
-          <div className="card p-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Brain className="text-[#00ff88]" size={16} />
-                <div>
-                  <span className="text-white font-mono text-xs">Analysis Confidence</span>
-                  <p className="text-gray-500 text-[10px] font-mono mt-0.5">{analysis?.confidence_reasoning || ''}</p>
-                </div>
-              </div>
-              <div className="text-right">
-                <span className="text-2xl font-mono text-[#00ff88]">{analysis?.confidence || 0}%</span>
-              </div>
+          {/* Confidence Score — 5-Factor Weighted Breakdown */}
+          <div className="card p-4">
+            <div className="flex items-center gap-2 mb-4">
+              <Brain className="text-[#00ff88]" size={16} />
+              <h2 className="text-sm font-mono text-white">AI Confidence Score</h2>
+              <span className="ml-auto text-3xl font-mono font-black text-[#00ff88]">
+                {analysis?.confidence || 0}%
+              </span>
             </div>
+
+            {/* Formula label */}
+            <p className="text-[10px] font-mono text-gray-500 mb-3">
+              = (0.30×Clarity) + (0.25×Engagement) + (0.20×Retention) + (0.15×Audio) + (0.10×Emotion)
+            </p>
+
+            <div className="space-y-2">
+              {[
+                { key: 'clarity',    label: 'Content Clarity',         weight: 0.30, color: '#00ff88' },
+                { key: 'engagement', label: 'Engagement Strength',     weight: 0.25, color: '#3b82f6' },
+                { key: 'retention',  label: 'Retention Stability',     weight: 0.20, color: '#a855f7' },
+                { key: 'audio',      label: 'Audio Quality',           weight: 0.15, color: '#f59e0b' },
+                { key: 'emotion',    label: 'Emotional Signal Strength', weight: 0.10, color: '#ec4899' },
+              ].map(({ key, label, weight, color }) => {
+                const raw   = analysis?.confidence_breakdown?.[key] ?? 0;
+                const wtd   = (raw * weight).toFixed(1);
+                const pct   = `${(weight * 100).toFixed(0)}%`;
+                const grade = raw >= 75 ? 'High' : raw >= 50 ? 'Mid' : 'Low';
+                return (
+                  <div key={key} className="bg-[#12121a] border border-[#2a2a3a] rounded p-2">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-[10px] font-mono text-gray-300">{label}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-mono text-gray-500">w={pct}</span>
+                        <span className="text-[10px] font-mono" style={{ color }}>
+                          {raw} → +{wtd}
+                        </span>
+                        <span className={`text-[9px] font-mono px-1 rounded ${
+                          grade === 'High' ? 'bg-green-500/20 text-green-400'
+                          : grade === 'Mid' ? 'bg-yellow-500/20 text-yellow-400'
+                          : 'bg-red-500/20 text-red-400'
+                        }`}>{grade}</span>
+                      </div>
+                    </div>
+                    <div className="w-full bg-[#2a2a3a] rounded-full h-1">
+                      <div
+                        className="h-1 rounded-full transition-all duration-500"
+                        style={{ width: `${raw}%`, backgroundColor: color }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <p className="text-[10px] font-mono text-gray-500 mt-3 leading-relaxed">
+              {analysis?.confidence_reasoning || ''}
+            </p>
           </div>
 
           {/* Retention Curve - Line Chart */}
